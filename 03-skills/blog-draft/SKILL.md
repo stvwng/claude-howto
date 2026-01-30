@@ -153,6 +153,7 @@ Follow these steps sequentially. **Do not skip steps or proceed without user app
    - Supporting evidence and examples from research
    - Smooth transitions between sections
    - Strong conclusion with takeaway
+   - **Citations**: All comparisons, statistics, data points, and factual claims MUST cite the original source
 
 4. Save the draft as `draft-v0.1.md` in the blog post folder.
 
@@ -162,14 +163,22 @@ Follow these steps sequentially. **Do not skip steps or proceed without user app
 
    *[Optional: subtitle or tagline]*
 
-   [Full content...]
+   [Full content with inline citations...]
 
    ---
 
    ## References
-   - [Source 1]
-   - [Source 2]
+   - [1] Source 1 Title - URL or Citation
+   - [2] Source 2 Title - URL or Citation
+   - [3] Source 3 Title - URL or Citation
    ```
+
+6. **Citation Requirements**:
+   - Every data point, statistic, or comparison MUST have an inline citation
+   - Use numbered references [1], [2], etc., or named citations [Source Name]
+   - Link citations to the References section at the end
+   - Example: "Studies show that 65% of developers prefer TypeScript [1]"
+   - Example: "React outperforms Vue in rendering speed by 20% [React Benchmarks 2024]"
 
 ### Step 7: Commit Draft (if in git repo)
 
@@ -244,6 +253,11 @@ blog-posts/
 - **Hook**: Start with a question, surprising fact, or relatable scenario
 - **Flow**: Each paragraph should connect to the next
 - **Evidence**: Support claims with data from research
+- **Citations**: ALWAYS cite sources for:
+  - All statistics and data points (e.g., "According to [Source], 75% of...")
+  - Comparisons between products, services, or approaches (e.g., "X performs 2x faster than Y [Source]")
+  - Factual claims about market trends, research findings, or benchmarks
+  - Use inline citations with format: [Source Name] or [Author, Year]
 - **Voice**: Maintain consistent tone throughout
 - **Length**: Respect the target word count
 - **Readability**: Use short paragraphs, bullet points where appropriate
