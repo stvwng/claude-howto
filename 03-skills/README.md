@@ -710,6 +710,7 @@ Package skills in a plugin's `skills/` directory for broader distribution.
 
 - [Official Skills Documentation](https://code.claude.com/docs/en/skills)
 - [Agent Skills Architecture Blog](https://claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills)
+- [Skills Repository](https://github.com/luongnv89/skills) - Collection of ready-to-use skills
 - [Slash Commands Guide](../01-slash-commands/) - User-initiated shortcuts
 - [Subagents Guide](../04-subagents/) - Delegated AI agents
 - [Memory Guide](../02-memory/) - Persistent context
