@@ -38,17 +38,17 @@ graph TD
     K[Optional Path:<br/>Learn CLI Anytime]
     K -.-> J
 
-    style A fill:#90EE90
-    style B fill:#87CEEB
-    style C fill:#87CEEB
-    style D fill:#FFD700
-    style E fill:#FFD700
-    style F fill:#FFA500
-    style G fill:#FF6347
-    style H fill:#FF6347
-    style I fill:#8B0000,color:#fff
-    style J fill:#87CEEB
-    style K fill:#E6E6FA,stroke:#9370DB,stroke-width:2px
+    style A fill:#2E7D32,color:#fff
+    style B fill:#1565C0,color:#fff
+    style C fill:#1565C0,color:#fff
+    style D fill:#F57C00,color:#fff
+    style E fill:#F57C00,color:#fff
+    style F fill:#E65100,color:#fff
+    style G fill:#C62828,color:#fff
+    style H fill:#C62828,color:#fff
+    style I fill:#B71C1C,color:#fff
+    style J fill:#1565C0,color:#fff
+    style K fill:#6A1B9A,color:#fff,stroke:#9C27B0,stroke-width:2px
 ```
 
 **Color Legend:**
