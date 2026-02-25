@@ -7,7 +7,7 @@
 
 > Quick reference guide to all Claude Code features: commands, agents, skills, plugins, and hooks.
 
-**Navigation**: [Commands](#slash-commands) | [Sub-Agents](#sub-agents) | [Skills](#skills) | [Plugins](#plugins) | [MCP Servers](#mcp-servers) | [Hooks](#hooks) | [Memory](#memory-files)
+**Navigation**: [Commands](#slash-commands) | [Sub-Agents](#sub-agents) | [Skills](#skills) | [Plugins](#plugins) | [MCP Servers](#mcp-servers) | [Hooks](#hooks) | [Memory](#memory-files) | [New Features](#new-features-february-2026)
 
 ---
 
@@ -15,14 +15,14 @@
 
 | Feature | Built-in | Examples | Total | Reference |
 |---------|----------|----------|-------|-----------|
-| **Slash Commands** | 30 | 8 | 38 | [01-slash-commands/](01-slash-commands/) |
-| **Sub-Agents** | 8 | 7 | 15 | [04-subagents/](04-subagents/) |
+| **Slash Commands** | 40 | 8 | 48 | [01-slash-commands/](01-slash-commands/) |
+| **Sub-Agents** | 6 | 10 | 16 | [04-subagents/](04-subagents/) |
 | **Skills** | - | 4 | 4 | [03-skills/](03-skills/) |
 | **Plugins** | - | 3 | 3 | [07-plugins/](07-plugins/) |
 | **MCP Servers** | 1 | 8 | 9 | [05-mcp/](05-mcp/) |
-| **Hooks** | 9 events | 7 | 7 | [06-hooks/](06-hooks/) |
-| **Memory** | 3 types | 3 | 3 | [02-memory/](02-memory/) |
-| **Total** | **51** | **40** | **79** | |
+| **Hooks** | 16 events | 7 | 7 | [06-hooks/](06-hooks/) |
+| **Memory** | 7 types | 3 | 3 | [02-memory/](02-memory/) |
+| **Total** | **70** | **43** | **90** | |
 
 ---
 
@@ -62,7 +62,18 @@ Commands are user-invoked shortcuts that execute specific actions.
 | `/rename` | Rename current session | Organize sessions |
 | `/resume` | Resume previous session | Continue work |
 | `/todo` | View/manage todo list | Track tasks |
+| `/todos` | View all project TODOs | Track outstanding items |
 | `/tasks` | View background tasks | Monitor async operations |
+| `/copy` | Copy last response to clipboard | Share output quickly |
+| `/teleport` | Transfer session to another machine | Continue work remotely |
+| `/desktop` | Open Claude Desktop app | Switch to desktop interface |
+| `/theme` | Change color theme | Customize appearance |
+| `/usage` | Show API usage statistics | Monitor quota and costs |
+| `/fork` | Fork current conversation | Explore alternatives |
+| `/stats` | Show session statistics | Review session metrics |
+| `/statusline` | Configure status line | Customize status display |
+| `/fast` | Toggle fast output mode | Speed up responses |
+| `/terminal-setup` | Configure terminal integration | Setup terminal features |
 
 ### Custom Commands (Examples)
 
@@ -96,20 +107,21 @@ Specialized AI assistants with isolated contexts for specific tasks.
 
 | Agent | Description | Tools | Model | When to Use |
 |-------|-------------|-------|-------|-------------|
-| **general-purpose** | Multi-step tasks, research | All tools | Sonnet | Complex research, multi-file tasks |
-| **Explore** | Codebase exploration | Read, Glob, Grep | Haiku | Quick searches, understanding code |
-| **Plan** | Implementation planning | Read, Glob, Grep, Bash | Sonnet | Architecture design, planning |
-| **Bash** | Command execution | Bash | Sonnet | Git operations, terminal tasks |
-| **code-reviewer** | Code quality analysis | Read, Glob, Grep | Sonnet | PR reviews, quality checks |
-| **code-architect** | Feature architecture design | Read, Glob, Grep, LS | Sonnet | New feature planning |
-| **code-explorer** | Deep codebase analysis | Read, Glob, Grep, LS | Sonnet | Understanding existing features |
-| **clean-code-reviewer** | Clean Code principles | Read, Grep, Glob, Bash | Sonnet | Maintainability review |
+| **general-purpose** | Multi-step tasks, research | All tools | Inherits model | Complex research, multi-file tasks |
+| **Plan** | Implementation planning | Read, Glob, Grep, Bash | Inherits model | Architecture design, planning |
+| **Explore** | Codebase exploration | Read, Glob, Grep | Haiku 4.5 | Quick searches, understanding code |
+| **Bash** | Command execution | Bash | Inherits model | Git operations, terminal tasks |
+| **statusline-setup** | Status line configuration | Bash, Read, Write | Sonnet 4.6 | Configure status line display |
+| **Claude Code Guide** | Help and documentation | Read, Glob, Grep | Haiku 4.5 | Getting help, learning features |
 
 ### Custom Sub-Agents (Examples)
 
 | Agent | Description | When to Use | Scope | Installation |
 |-------|-------------|-------------|-------|--------------|
 | `code-reviewer` | Comprehensive code quality | Code review sessions | Project | `cp 04-subagents/code-reviewer.md .claude/agents/` |
+| `code-architect` | Feature architecture design | New feature planning | Project | `cp 04-subagents/code-architect.md .claude/agents/` |
+| `code-explorer` | Deep codebase analysis | Understanding existing features | Project | `cp 04-subagents/code-explorer.md .claude/agents/` |
+| `clean-code-reviewer` | Clean Code principles review | Maintainability review | Project | `cp 04-subagents/clean-code-reviewer.md .claude/agents/` |
 | `test-engineer` | Test strategy & coverage | Test planning | Project | `cp 04-subagents/test-engineer.md .claude/agents/` |
 | `documentation-writer` | Technical documentation | API docs, guides | Project | `cp 04-subagents/documentation-writer.md .claude/agents/` |
 | `secure-reviewer` | Security-focused review | Security audits | Project | `cp 04-subagents/secure-reviewer.md .claude/agents/` |
@@ -208,9 +220,9 @@ Model Context Protocol servers for external tool and API access.
 
 | Server | Description | When to Use | Scope | Installation |
 |--------|-------------|-------------|-------|--------------|
-| **GitHub** | PR management, issues, code | GitHub workflows | Project | `cp 05-mcp/github-mcp.json .claude/mcp.json` |
-| **Database** | SQL queries, data access | Database operations | Project | `cp 05-mcp/database-mcp.json .claude/mcp.json` |
-| **Filesystem** | Advanced file operations | Complex file tasks | User | `cp 05-mcp/filesystem-mcp.json .claude/mcp.json` |
+| **GitHub** | PR management, issues, code | GitHub workflows | Project | `claude mcp add github -- npx -y @modelcontextprotocol/server-github` |
+| **Database** | SQL queries, data access | Database operations | Project | `claude mcp add db -- npx -y @modelcontextprotocol/server-postgres` |
+| **Filesystem** | Advanced file operations | Complex file tasks | User | `claude mcp add fs -- npx -y @modelcontextprotocol/server-filesystem` |
 | **Slack** | Team communication | Notifications, updates | Project | Configure in settings |
 | **Google Docs** | Document access | Doc editing, review | Project | Configure in settings |
 | **Asana** | Project management | Task tracking | Project | Configure in settings |
@@ -218,7 +230,7 @@ Model Context Protocol servers for external tool and API access.
 | **Memory** | Persistent memory | Cross-session recall | User | Configure in settings |
 | **Context7** | Library documentation | Up-to-date docs lookup | Built-in | Built-in |
 
-> **Scope**: `Project` = team (`.claude/mcp.json`), `User` = personal (`~/.claude/mcp.json`), `Built-in` = pre-installed
+> **Scope**: `Project` = team (`.mcp.json`), `User` = personal (`~/.claude.json`), `Built-in` = pre-installed
 
 ### MCP Configuration Example
 
@@ -240,7 +252,7 @@ Model Context Protocol servers for external tool and API access.
 
 **Quick Install (GitHub MCP)**:
 ```bash
-export GITHUB_TOKEN="your_token" && cp 05-mcp/github-mcp.json .claude/mcp.json
+export GITHUB_TOKEN="your_token" && claude mcp add github -- npx -y @modelcontextprotocol/server-github
 ```
 
 ---
@@ -256,12 +268,19 @@ Event-driven automation that executes shell commands on Claude Code events.
 | `PreToolUse` | Before tool execution | Before any tool runs | Validation, logging |
 | `PostToolUse` | After tool completion | After any tool completes | Formatting, notifications |
 | `PermissionRequest` | Permission dialog shown | Before sensitive actions | Custom approval flows |
-| `UserPromptSubmit` | Before prompt processing | User sends message | Input validation |
 | `Notification` | Notification sent | Claude sends notification | External alerts |
+| `UserPromptSubmit` | Before prompt processing | User sends message | Input validation |
 | `Stop` | Agent finishes responding | Response complete | Cleanup, reporting |
+| `SubagentStart` | Subagent begins | Subagent task starts | Initialize subagent context |
 | `SubagentStop` | Subagent finishes | Subagent task complete | Chain actions |
 | `PreCompact` | Before compact operation | Context compression | State preservation |
-| `SessionStart` | Session begins/resumes | Session initialization | Setup tasks |
+| `SessionStart` | Session begins | Session initialization | Setup tasks |
+| `SessionEnd` | Session ends | Session termination | Cleanup, save state |
+| `WorktreeCreate` | Worktree created | Git worktree created | Setup worktree environment |
+| `WorktreeRemove` | Worktree removed | Git worktree removed | Cleanup worktree resources |
+| `ConfigChange` | Configuration updated | Settings modified | React to config changes |
+| `TeammateIdle` | Teammate agent idle | Agent team coordination | Distribute work |
+| `TaskCompleted` | Task finished | Background task done | Post-task processing |
 
 ### Example Hooks
 
@@ -315,11 +334,15 @@ Persistent context loaded automatically across sessions.
 
 | Type | Location | Scope | When to Use |
 |------|----------|-------|-------------|
-| **Project Memory** | `./CLAUDE.md` | Project (team) | Team standards, project rules |
-| **Directory Memory** | `./src/api/CLAUDE.md` | Directory | Module-specific rules |
-| **Personal Memory** | `~/.claude/CLAUDE.md` | User (personal) | Personal preferences |
+| **Managed Policy** | Org-managed policies | Organization | Enforce org-wide standards |
+| **Project** | `./CLAUDE.md` | Project (team) | Team standards, project context |
+| **Project Rules** | `.claude/rules/` | Project (team) | Modular project rules |
+| **User** | `~/.claude/CLAUDE.md` | User (personal) | Personal preferences |
+| **User Rules** | `~/.claude/rules/` | User (personal) | Modular personal rules |
+| **Local** | `./CLAUDE.local.md` | Local (git-ignored) | Machine-specific overrides |
+| **Auto Memory** | Automatic | Session | Auto-captured insights and corrections |
 
-> **Scope**: `Project` = shared with team via git, `Directory` = module-specific, `User` = personal preferences
+> **Scope**: `Organization` = managed by admins, `Project` = shared with team via git, `User` = personal preferences, `Local` = not committed, `Session` = auto-managed
 
 **Reference**: [02-memory/](02-memory/) | [Official Docs](https://docs.anthropic.com/en/docs/claude-code/memory)
 
@@ -328,6 +351,23 @@ Persistent context loaded automatically across sessions.
 cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 cp 02-memory/personal-CLAUDE.md ~/.claude/CLAUDE.md
 ```
+
+---
+
+## New Features (February 2026)
+
+| Feature | Description | How to Use |
+|---------|-------------|------------|
+| **Remote Control** | Control Claude Code sessions remotely via API | Use the remote control API to send prompts and receive responses programmatically |
+| **Web Sessions** | Run Claude Code in a browser-based environment | Access via `claude web` or through the Anthropic Console |
+| **Desktop App** | Native desktop application for Claude Code | Use `/desktop` or download from Anthropic website |
+| **Agent Teams** | Coordinate multiple agents working on related tasks | Configure teammate agents that collaborate and share context |
+| **Task List** | Background task management and monitoring | Use `/tasks` to view and manage background operations |
+| **Prompt Suggestions** | Context-aware command suggestions | Suggestions appear automatically based on current context |
+| **Git Worktrees** | Isolated git worktrees for parallel development | Use worktree commands for safe parallel branch work |
+| **Sandboxing** | Isolated execution environments for safety | Use `/sandbox` to toggle; runs commands in restricted environments |
+| **MCP OAuth** | OAuth authentication for MCP servers | Configure OAuth credentials in MCP server settings for secure access |
+| **MCP Tool Search** | Search and discover MCP tools dynamically | Use tool search to find available MCP tools across connected servers |
 
 ---
 
@@ -353,7 +393,7 @@ cp 02-memory/personal-CLAUDE.md ~/.claude/CLAUDE.md
 | 2. Daily Use | Slash Commands | `cp 01-slash-commands/*.md .claude/commands/` |
 | 3. Quality | Sub-Agents | `cp 04-subagents/*.md .claude/agents/` |
 | 4. Automation | Hooks | `cp 06-hooks/*.sh ~/.claude/hooks/ && chmod +x ~/.claude/hooks/*.sh` |
-| 5. External | MCP | `cp 05-mcp/github-mcp.json .claude/mcp.json` |
+| 5. External | MCP | `claude mcp add github -- npx -y @modelcontextprotocol/server-github` |
 | 6. Advanced | Skills | `cp -r 03-skills/* ~/.claude/skills/` |
 | 7. Complete | Plugins | `/plugin install pr-review` |
 
@@ -387,4 +427,4 @@ chmod +x ~/.claude/hooks/*.sh
 
 ---
 
-**Last Updated**: January 2026
+**Last Updated**: February 2026

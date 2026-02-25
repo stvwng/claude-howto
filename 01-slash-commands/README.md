@@ -30,9 +30,12 @@ Built-in commands are shortcuts for common actions. Type `/` in Claude Code to s
 | `/context` | Visualize current context usage as a colored grid |
 | `/copy` | Copy the last assistant response to clipboard |
 | `/cost` | Show token usage statistics |
+| `/desktop` | Hand off CLI session to Desktop app (macOS/Windows) |
 | `/doctor` | Checks the health of your Claude Code installation |
 | `/exit` | Exit the REPL |
 | `/export [filename]` | Export the current conversation to a file or clipboard |
+| `/fast` | Toggle fast mode (same model, faster output) |
+| `/fork` | Fork the current session into a new conversation |
 | `/help` | Get usage help |
 | `/hooks` | Manage hook configurations for tool events |
 | `/ide` | Manage IDE integrations and show status |
@@ -67,6 +70,14 @@ Built-in commands are shortcuts for common actions. Type `/` in Claude Code to s
 | `/usage` | Show plan usage limits and rate limit status |
 | `/vim` | Enter vim mode for alternating insert and command modes |
 
+### Recent Changes
+
+- `/model` picker now shows human-readable labels (e.g., "Sonnet 4.5") instead of raw model IDs
+- `/rename` auto-generates a session name from conversation context when called without arguments
+- `/rename` now updates the terminal tab title by default
+- `/resume` picker increased initial session count from 10 to 50
+- MCP prompts are available as `/mcp__<server>__<prompt>` commands (see [MCP Prompts as Commands](#mcp-prompts-as-commands))
+
 ## Custom Commands (Now Skills)
 
 Custom slash commands have been **merged into skills**. Both approaches create commands you can invoke with `/command-name`:
@@ -76,7 +87,7 @@ Custom slash commands have been **merged into skills**. Both approaches create c
 | **Skills (Recommended)** | `.claude/skills/<name>/SKILL.md` | Current standard |
 | **Legacy Commands** | `.claude/commands/<name>.md` | Still works |
 
-If a skill and a command share the same name, the **skill takes precedence**.
+If a skill and a command share the same name, the **skill takes precedence**. For example, when both `.claude/commands/review.md` and `.claude/skills/review/SKILL.md` exist, the skill version is used.
 
 ### Migration Path
 

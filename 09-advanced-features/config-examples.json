@@ -72,8 +72,7 @@
           "showTimeEstimates": true
         },
         "checkpoints": {
-          "autoCheckpoint": true,
-          "autoCheckpointInterval": 15
+          "autoCheckpoint": true
         }
       }
     },
@@ -96,8 +95,7 @@
           "PostPush": "~/.claude/hooks/notify-team.sh"
         },
         "checkpoints": {
-          "autoCheckpoint": true,
-          "autoCheckpointInterval": 10
+          "autoCheckpoint": true
         },
         "planning": {
           "autoEnter": true,
@@ -172,8 +170,7 @@
           "maxConcurrentTasks": 5
         },
         "checkpoints": {
-          "autoCheckpoint": true,
-          "autoCheckpointInterval": 20
+          "autoCheckpoint": true
         }
       }
     },
@@ -219,9 +216,7 @@
           "showTimeEstimates": true
         },
         "checkpoints": {
-          "autoCheckpoint": true,
-          "autoCheckpointInterval": 10,
-          "maxCheckpoints": 30
+          "autoCheckpoint": true
         },
         "hooks": {
           "PreToolUse:Edit": "~/.claude/hooks/backup-file.sh ${file_path}",

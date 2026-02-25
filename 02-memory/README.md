@@ -159,7 +159,7 @@ The `/memory` command provides direct access to edit your CLAUDE.md memory files
 /memory
 
 # Claude presents options:
-# 1. Enterprise Policy Memory
+# 1. Managed Policy Memory
 # 2. Project Memory (./CLAUDE.md)
 # 3. User Memory (~/.claude/CLAUDE.md)
 # 4. Local Project Memory
@@ -180,12 +180,17 @@ CLAUDE.md files support the `@path/to/file` syntax to include external content:
 See @README.md for project overview
 See @package.json for available npm commands
 See @docs/architecture.md for system design
+
+# Import from home directory using absolute path
+@~/.claude/my-project-instructions.md
 ```
 
 **Import features:**
 
-- Supports both relative and absolute paths
-- Enables recursive nesting up to 5 levels deep
+- Both relative and absolute paths are supported (e.g., `@docs/api.md` or `@~/.claude/my-project-instructions.md`)
+- Recursive imports are supported with a maximum depth of 5
+- First-time imports from external locations trigger an approval dialog for security
+- Import directives are not evaluated inside markdown code spans or code blocks (so documenting them in examples is safe)
 - Helps avoid duplication by referencing existing documentation
 - Automatically includes referenced content in Claude's context
 
@@ -208,11 +213,11 @@ graph TB
 
 ## Memory Hierarchy in Claude Code
 
-Claude Code uses a four-tier hierarchical memory system. Memory files are automatically loaded when Claude Code launches, with higher-level files taking precedence.
+Claude Code uses a multi-tier hierarchical memory system. Memory files are automatically loaded when Claude Code launches, with higher-level files taking precedence.
 
 **Complete Memory Hierarchy (in order of precedence):**
 
-1. **Enterprise Policy** - Organization-wide instructions
+1. **Managed Policy** - Organization-wide instructions
    - macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`
    - Linux: `/etc/claude-code/CLAUDE.md`
    - Windows: `C:\ProgramData\ClaudeCode\CLAUDE.md`
@@ -220,11 +225,20 @@ Claude Code uses a four-tier hierarchical memory system. Memory files are automa
 2. **Project Memory** - Team-shared context (version controlled)
    - `./.claude/CLAUDE.md` or `./CLAUDE.md` (in repository root)
 
-3. **User Memory** - Personal preferences
+3. **Project Rules** - Modular, topic-specific project instructions
+   - `./.claude/rules/*.md`
+
+4. **User Memory** - Personal preferences (all projects)
    - `~/.claude/CLAUDE.md`
 
-4. **Local Project Memory** - Personal project-specific preferences (deprecated)
+5. **User-Level Rules** - Personal rules (all projects)
+   - `~/.claude/rules/*.md`
+
+6. **Local Project Memory** - Personal project-specific preferences
    - `./CLAUDE.local.md`
+
+7. **Auto Memory** - Claude's automatic notes and learnings
+   - `~/.claude/projects/<project>/memory/`
 
 **Memory Discovery Behavior:**
 
@@ -232,20 +246,30 @@ Claude searches for memory files in this order, with earlier locations taking pr
 
 ```mermaid
 graph TD
-    A["Project Root"] -->|searches up| B["CLAUDE.md"]
-    B -->|highest priority| B1["Global instructions"]
-    A -->|searches down| C["Subdirectory CLAUDE.md"]
-    C -->|specific overrides| C1["Directory-specific rules"]
-    H["User Home"] -->|fallback| D["~/.claude/CLAUDE.md"]
-    D -->|personal preferences| D1["Personal settings"]
+    A["Managed Policy<br/>/Library/.../ClaudeCode/CLAUDE.md"] -->|highest priority| B["Project Memory<br/>./CLAUDE.md"]
+    B --> C["Project Rules<br/>./.claude/rules/*.md"]
+    C --> D["User Memory<br/>~/.claude/CLAUDE.md"]
+    D --> E["User Rules<br/>~/.claude/rules/*.md"]
+    E --> F["Local Project Memory<br/>./CLAUDE.local.md"]
+    F --> G["Auto Memory<br/>~/.claude/projects/.../memory/"]
 
-    B1 -->|imports| E["@docs/architecture.md"]
-    E -->|imports| F["@docs/api-standards.md"]
+    B -->|imports| H["@docs/architecture.md"]
+    H -->|imports| I["@docs/api-standards.md"]
+
+    style A fill:#fce4ec,stroke:#333,color:#333
+    style B fill:#e1f5fe,stroke:#333,color:#333
+    style C fill:#e1f5fe,stroke:#333,color:#333
+    style D fill:#f3e5f5,stroke:#333,color:#333
+    style E fill:#f3e5f5,stroke:#333,color:#333
+    style F fill:#e8f5e9,stroke:#333,color:#333
+    style G fill:#fff3e0,stroke:#333,color:#333
+    style H fill:#e1f5fe,stroke:#333,color:#333
+    style I fill:#e1f5fe,stroke:#333,color:#333
 ```
 
 ## Modular Rules System
 
-Create organized, path-specific rules using the `.claude/rules/` directory structure:
+Create organized, path-specific rules using the `.claude/rules/` directory structure. Rules can be defined at both the project level and user level:
 
 ```
 your-project/
@@ -254,8 +278,19 @@ your-project/
 │   └── rules/
 │       ├── code-style.md
 │       ├── testing.md
-│       └── security.md
+│       ├── security.md
+│       └── api/                  # Subdirectories supported
+│           ├── conventions.md
+│           └── validation.md
+
+~/.claude/
+├── CLAUDE.md
+└── rules/                        # User-level rules (all projects)
+    ├── personal-style.md
+    └── preferred-patterns.md
 ```
+
+Rules are discovered recursively within the `rules/` directory, including any subdirectories. User-level rules at `~/.claude/rules/` are loaded before project-level rules, allowing personal defaults that projects can override.
 
 ### Path-Specific Rules with YAML Frontmatter
 
@@ -281,23 +316,26 @@ paths: src/api/**/*.ts
 - `src/**/*.{ts,tsx}` - Multiple extensions
 - `{src,lib}/**/*.ts, tests/**/*.test.ts` - Multiple patterns
 
-### Symlinks Support
+### Subdirectories and Symlinks
 
-Rules in `.claude/rules/` support symlinks for file references and external documentation.
+Rules in `.claude/rules/` support two organizational features:
+
+- **Subdirectories**: Rules are discovered recursively, so you can organize them into topic-based folders (e.g., `rules/api/`, `rules/testing/`, `rules/security/`)
+- **Symlinks**: Symlinks are supported for sharing rules across multiple projects. For example, you can symlink a shared rule file from a central location into each project's `.claude/rules/` directory
 
 ## Memory Locations Table
 
 | Location | Scope | Priority | Shared | Access | Best For |
 |----------|-------|----------|--------|--------|----------|
-| `/Library/Application Support/ClaudeCode/CLAUDE.md` (macOS) | Enterprise | Highest | Organization | System | Company-wide policies |
-| `/etc/claude-code/CLAUDE.md` (Linux) | Enterprise | Highest | Organization | System | Organization standards |
-| `C:\ProgramData\ClaudeCode\CLAUDE.md` (Windows) | Enterprise | Highest | Organization | System | Corporate guidelines |
-| `./CLAUDE.md` | Project | High | Team | Git | Team standards, shared architecture |
-| `./.claude/CLAUDE.md` | Project | High | Team | Git | Alternative project location |
-| `./.claude/rules/` | Project Rules | High | Team | Git | Path-specific, modular rules |
-| `./subdir/CLAUDE.md` | Directory | Medium | Team | Git | Directory-specific rules |
-| `~/.claude/CLAUDE.md` | Personal | Low | Individual | Filesystem | Personal preferences |
-| `./CLAUDE.local.md` | Project Local | Deprecated | Individual | Git (ignored) | Personal project notes (deprecated) |
+| `/Library/Application Support/ClaudeCode/CLAUDE.md` (macOS) | Managed Policy | 1 (Highest) | Organization | System | Company-wide policies |
+| `/etc/claude-code/CLAUDE.md` (Linux) | Managed Policy | 1 (Highest) | Organization | System | Organization standards |
+| `C:\ProgramData\ClaudeCode\CLAUDE.md` (Windows) | Managed Policy | 1 (Highest) | Organization | System | Corporate guidelines |
+| `./CLAUDE.md` or `./.claude/CLAUDE.md` | Project Memory | 2 | Team | Git | Team standards, shared architecture |
+| `./.claude/rules/*.md` | Project Rules | 3 | Team | Git | Path-specific, modular rules |
+| `~/.claude/CLAUDE.md` | User Memory | 4 | Individual | Filesystem | Personal preferences (all projects) |
+| `~/.claude/rules/*.md` | User Rules | 5 | Individual | Filesystem | Personal rules (all projects) |
+| `./CLAUDE.local.md` | Project Local | 6 | Individual | Git (ignored) | Personal project-specific preferences |
+| `~/.claude/projects/<project>/memory/` | Auto Memory | 7 (Lowest) | Individual | Filesystem | Claude's automatic notes and learnings |
 
 ## Memory Update Lifecycle
 
@@ -319,6 +357,89 @@ sequenceDiagram
     Claude->>Claude: Load updated memory
     Claude-->>User: "Memory saved!"
 ```
+
+## Auto Memory
+
+Auto memory is a persistent directory where Claude automatically records learnings, patterns, and insights as it works with your project. Unlike CLAUDE.md files which you write and maintain manually, auto memory is written by Claude itself during sessions.
+
+### How Auto Memory Works
+
+- **Location**: `~/.claude/projects/<project>/memory/`
+- **Entrypoint**: `MEMORY.md` serves as the main file in the auto memory directory
+- **Topic files**: Optional additional files for specific subjects (e.g., `debugging.md`, `api-conventions.md`)
+- **Loading behavior**: The first 200 lines of `MEMORY.md` are loaded into the system prompt at session start. Topic files are loaded on demand, not at startup.
+- **Read/write**: Claude reads and writes memory files during sessions as it discovers patterns and project-specific knowledge
+
+### Auto Memory Architecture
+
+```mermaid
+graph TD
+    A["Claude Session Starts"] --> B["Load MEMORY.md<br/>(first 200 lines)"]
+    B --> C["Session Active"]
+    C --> D["Claude discovers<br/>patterns & insights"]
+    D --> E{"Write to<br/>auto memory"}
+    E -->|General notes| F["MEMORY.md"]
+    E -->|Topic-specific| G["debugging.md"]
+    E -->|Topic-specific| H["api-conventions.md"]
+    C --> I["On-demand load<br/>topic files"]
+    I --> C
+
+    style A fill:#e1f5fe,stroke:#333,color:#333
+    style B fill:#e1f5fe,stroke:#333,color:#333
+    style C fill:#e8f5e9,stroke:#333,color:#333
+    style D fill:#f3e5f5,stroke:#333,color:#333
+    style E fill:#fff3e0,stroke:#333,color:#333
+    style F fill:#fce4ec,stroke:#333,color:#333
+    style G fill:#fce4ec,stroke:#333,color:#333
+    style H fill:#fce4ec,stroke:#333,color:#333
+    style I fill:#f3e5f5,stroke:#333,color:#333
+```
+
+### Auto Memory Directory Structure
+
+```
+~/.claude/projects/<project>/memory/
+├── MEMORY.md              # Entrypoint (first 200 lines loaded at startup)
+├── debugging.md           # Topic file (loaded on demand)
+├── api-conventions.md     # Topic file (loaded on demand)
+└── testing-patterns.md    # Topic file (loaded on demand)
+```
+
+### Controlling Auto Memory
+
+Auto memory can be controlled via the `CLAUDE_CODE_DISABLE_AUTO_MEMORY` environment variable:
+
+| Value | Behavior |
+|-------|----------|
+| `0` | Force auto memory **on** |
+| `1` | Force auto memory **off** |
+| *(unset)* | Default behavior (auto memory enabled) |
+
+```bash
+# Disable auto memory for a session
+CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude
+
+# Force auto memory on explicitly
+CLAUDE_CODE_DISABLE_AUTO_MEMORY=0 claude
+```
+
+## Additional Directories with `--add-dir`
+
+The `--add-dir` flag allows Claude Code to load CLAUDE.md files from additional directories beyond the current working directory. This is useful for monorepos or multi-project setups where context from other directories is relevant.
+
+To enable this feature, set the environment variable:
+
+```bash
+CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1
+```
+
+Then launch Claude Code with the flag:
+
+```bash
+claude --add-dir /path/to/other/project
+```
+
+Claude will load CLAUDE.md from the specified additional directory alongside the memory files from your current working directory.
 
 ## Practical Examples
 
@@ -686,7 +807,7 @@ graph LR
 - **Keep organized**: Structure memory files with clear markdown sections and headings
 
 - **Use appropriate hierarchy levels**:
-  - **Enterprise memory**: Company-wide policies, security standards, compliance requirements
+  - **Managed policy**: Company-wide policies, security standards, compliance requirements
   - **Project memory**: Team standards, architecture, coding conventions (commit to git)
   - **User memory**: Personal preferences, communication style, tooling choices
   - **Directory memory**: Module-specific rules and overrides
@@ -728,7 +849,7 @@ graph LR
 
 | Use Case | Memory Level | Rationale |
 |----------|-------------|-----------|
-| Company security policy | Enterprise | Applies to all projects organization-wide |
+| Company security policy | Managed Policy | Applies to all projects organization-wide |
 | Team code style guide | Project | Shared with team via git |
 | Your preferred editor shortcuts | User | Personal preference, not shared |
 | API module standards | Directory | Specific to that module only |
@@ -911,17 +1032,22 @@ For the most up-to-date information, refer to the official Claude Code documenta
 
 **Import Syntax:**
 
-- Use `@path/to/file` to include external content
+- Use `@path/to/file` to include external content (e.g., `@~/.claude/my-project-instructions.md`)
 - Supports both relative and absolute paths
-- Recursive nesting supported up to 5 levels deep
+- Recursive imports supported with a maximum depth of 5
+- First-time external imports trigger an approval dialog
+- Not evaluated inside markdown code spans or code blocks
 - Automatically includes referenced content in Claude's context
 
 **Memory Hierarchy Precedence:**
 
-1. Enterprise Policy (highest precedence)
+1. Managed Policy (highest precedence)
 2. Project Memory
-3. User Memory
-4. Local Project Memory (deprecated, lowest precedence)
+3. Project Rules (`.claude/rules/`)
+4. User Memory
+5. User-Level Rules (`~/.claude/rules/`)
+6. Local Project Memory
+7. Auto Memory (lowest precedence)
 
 ## Related Concepts Links
 

@@ -42,11 +42,13 @@ Use the `/rewind` command for quick access:
 
 ## Rewind Options
 
-When you rewind, you can choose what to restore:
+When you rewind, you are presented with a menu of five options:
 
-- **Conversation only** - Restore chat history and context, keep current code
-- **Code only** - Restore file changes, keep current conversation
-- **Both** - Restore both conversation and code to the checkpoint state
+1. **Restore code and conversation** -- Revert both files and messages to that checkpoint
+2. **Restore conversation** -- Rewind messages only, keep your current code as-is
+3. **Restore code** -- Revert file changes only, keep the full conversation history
+4. **Summarize from here** -- Compress the conversation from this point forward into an AI-generated summary instead of discarding it. The original messages are preserved in the transcript. You can optionally provide instructions to focus the summary on specific topics.
+5. **Never mind** -- Cancel and return to the current state
 
 ## Automatic Checkpoints
 
@@ -54,7 +56,7 @@ Claude Code automatically creates checkpoints for you:
 
 - **Every user prompt** - A new checkpoint is created with each user input
 - **Persistent** - Checkpoints persist across sessions
-- **Auto-cleaned** - Checkpoints are automatically cleaned up after 30 days (configurable)
+- **Auto-cleaned** - Checkpoints are automatically cleaned up after 30 days
 
 This means you can always rewind to any previous point in your conversation, from a few minutes ago to days before.
 
@@ -154,7 +156,6 @@ Claude Code automatically manages your checkpoints:
 
 - Checkpoints are created automatically with every user prompt
 - Old checkpoints are retained for up to 30 days
-- You can configure the retention period in your settings
 - Checkpoints are cleaned up automatically to prevent unlimited storage growth
 
 ## Workflow Patterns
@@ -194,7 +195,7 @@ Since checkpoints are created automatically, you can focus on your work without 
 - Review available checkpoints before rewinding
 - Use rewind when you want to explore different directions
 - Keep checkpoints to compare different approaches
-- Understand what each rewind option does (conversation, code, or both)
+- Understand what each rewind option does (restore code and conversation, restore conversation, restore code, or summarize)
 
 ❌ **Don't:**
 - Rely on checkpoints alone for code preservation
@@ -203,27 +204,15 @@ Since checkpoints are created automatically, you can focus on your work without 
 
 ## Configuration
 
-Configure checkpoint behavior in settings. Here's the comprehensive configuration with all available options:
+You can toggle automatic checkpoints in your settings:
 
 ```json
 {
-  "checkpoints": {
-    "autoCheckpoint": true,
-    "autoCheckpointInterval": 30,
-    "maxCheckpoints": 20,
-    "compressionEnabled": true,
-    "includeFileContents": true
-  }
+  "autoCheckpoint": true
 }
 ```
 
-### Configuration Options
-
-- `autoCheckpoint`: Enable automatic checkpoints (default: true)
-- `autoCheckpointInterval`: Minutes between auto-checkpoints (default: 30)
-- `maxCheckpoints`: Maximum number of checkpoints to retain (default: 20)
-- `compressionEnabled`: Compress checkpoint data to save space (default: true)
-- `includeFileContents`: Include full file contents in checkpoints (default: true)
+- `autoCheckpoint`: Enable or disable automatic checkpoint creation on every user prompt (default: `true`)
 
 ## Limitations
 
@@ -235,27 +224,13 @@ Checkpoints have the following limitations:
 
 ## Troubleshooting
 
-### Checkpoint Too Large
-
-**Problem**: Checkpoint creation is slow or fails
-
-**Solution**:
-```json
-{
-  "checkpoints": {
-    "includeFileContents": false,
-    "compressionEnabled": true
-  }
-}
-```
-
 ### Missing Checkpoints
 
 **Problem**: Expected checkpoint not found
 
 **Solution**:
 - Check if checkpoints were cleared
-- Verify checkpoint retention settings
+- Verify that `autoCheckpoint` is enabled in your settings
 - Check disk space
 
 ### Rewind Failed
@@ -292,7 +267,7 @@ Use both together:
 1. **Work normally** - Claude Code creates checkpoints automatically
 2. **Want to go back?** - Press `Esc` twice or use `/rewind`
 3. **Choose checkpoint** - Select from the list to rewind
-4. **Select what to restore** - Choose conversation, code, or both
+4. **Select what to restore** - Choose from restore code and conversation, restore conversation, restore code, summarize from here, or cancel
 5. **Continue working** - You're back at that point
 
 ### Keyboard Shortcuts

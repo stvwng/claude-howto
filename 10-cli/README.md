@@ -37,6 +37,12 @@ graph TD
 | `claude -r "<session>" "query"` | Resume session by ID or name | `claude -r "auth-refactor" "finish this PR"` |
 | `claude update` | Update to latest version | `claude update` |
 | `claude mcp` | Configure MCP servers | See [MCP documentation](../05-mcp/) |
+| `claude mcp serve` | Run Claude Code as an MCP server | `claude mcp serve` |
+| `claude agents` | List all configured subagents | `claude agents` |
+| `claude remote-control` | Start Remote Control session | `claude remote-control` |
+| `claude auth login` | Log in (supports `--email`, `--sso`) | `claude auth login --email user@example.com` |
+| `claude auth logout` | Log out of current account | `claude auth logout` |
+| `claude auth status` | Check auth status (exit 0 if logged in, 1 if not) | `claude auth status` |
 
 ## Core Flags
 
@@ -46,6 +52,15 @@ graph TD
 | `-c, --continue` | Load most recent conversation | `claude --continue` |
 | `-r, --resume` | Resume specific session by ID or name | `claude --resume auth-refactor` |
 | `-v, --version` | Output version number | `claude -v` |
+| `-w, --worktree` | Start in isolated git worktree | `claude -w` |
+| `--from-pr <number>` | Resume sessions linked to GitHub PR | `claude --from-pr 42` |
+| `--remote "task"` | Create web session on claude.ai | `claude --remote "implement API"` |
+| `--teleport` | Resume web session locally | `claude --teleport` |
+| `--teammate-mode` | Agent team display mode | `claude --teammate-mode tmux` |
+| `--init` / `--init-only` | Run initialization hooks | `claude --init` |
+| `--maintenance` | Run maintenance hooks and exit | `claude --maintenance` |
+| `--disable-slash-commands` | Disable all skills and slash commands | `claude --disable-slash-commands` |
+| `--no-session-persistence` | Disable session saving (print mode) | `claude -p --no-session-persistence "query"` |
 
 ### Interactive vs Print Mode
 
@@ -90,17 +105,20 @@ claude -p "list todos" | grep "URGENT"
 ### Model Selection Examples
 
 ```bash
-# Use Opus for complex tasks
+# Use Opus 4.6 for complex tasks
 claude --model opus "design a caching strategy"
 
-# Use Haiku for quick tasks
+# Use Haiku 4.5 for quick tasks
 claude --model haiku -p "format this JSON"
 
 # Full model name
-claude --model claude-sonnet-4-5-20250929 "review this code"
+claude --model claude-sonnet-4-6-20250929 "review this code"
 
 # With fallback for reliability
 claude -p --model opus --fallback-model sonnet "analyze architecture"
+
+# Use opusplan (Opus plans, Sonnet executes)
+claude --model opusplan "design and implement the caching layer"
 ```
 
 ## System Prompt Customization
@@ -608,6 +626,64 @@ claude -p --output-format json "find todos" | jq '.todos | length'
 # Transform output
 claude -p --output-format json "list improvements" | jq 'map({title: .title, priority: .priority})'
 ```
+
+---
+
+## Models
+
+Claude Code supports multiple models with different capabilities:
+
+| Model | ID | Context Window | Notes |
+|-------|-----|----------------|-------|
+| Opus 4.6 | `claude-opus-4-6` | 1M tokens | Most capable, adaptive effort levels |
+| Sonnet 4.6 | `claude-sonnet-4-6` | 1M tokens | Balanced speed and capability |
+| Haiku 4.5 | `claude-haiku-4-5` | 1M tokens | Fastest, best for quick tasks |
+
+### Model Selection
+
+```bash
+# Use short names
+claude --model opus "complex architectural review"
+claude --model sonnet "implement this feature"
+claude --model haiku -p "format this JSON"
+
+# Use opusplan alias (Opus plans, Sonnet executes)
+claude --model opusplan "design and implement the API"
+
+# Toggle fast mode during session
+/fast
+```
+
+### Effort Levels (Opus 4.6)
+
+Opus 4.6 supports adaptive reasoning with effort levels:
+
+```bash
+# Set effort level via environment variable
+export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, or high
+```
+
+---
+
+## Key Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | API key for authentication |
+| `ANTHROPIC_MODEL` | Override default model |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Override default Opus model ID |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Override default Sonnet model ID |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Override default Haiku model ID |
+| `MAX_THINKING_TOKENS` | Set extended thinking token budget |
+| `CLAUDE_CODE_EFFORT_LEVEL` | Set effort level for Opus 4.6 (`low`/`medium`/`high`) |
+| `CLAUDE_CODE_DISABLE_AUTO_MEMORY` | Disable automatic CLAUDE.md updates |
+| `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` | Disable background task execution |
+| `CLAUDE_CODE_ENABLE_TASKS` | Enable task list feature |
+| `CLAUDE_CODE_TASK_LIST_ID` | Named task directory shared across sessions |
+| `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION` | Toggle prompt suggestions (`true`/`false`) |
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Enable experimental agent teams |
+| `ENABLE_TOOL_SEARCH` | Enable tool search capability |
+| `MAX_MCP_OUTPUT_TOKENS` | Maximum tokens for MCP tool output |
 
 ---
 

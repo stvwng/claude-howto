@@ -145,22 +145,32 @@ cp -r 03-skills/code-review ~/.claude/skills/
 
 # Exercise 2: Set up hooks
 mkdir -p ~/.claude/hooks
-cp 06-hooks/pre-commit.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/pre-commit.sh
+cp 06-hooks/pre-tool-check.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/pre-tool-check.sh
 
 # Exercise 3: Configure hooks in settings
-# Add to ~/.claude/config.json:
+# Add to ~/.claude/settings.json:
 {
   "hooks": {
-    "PreCommit": "~/.claude/hooks/pre-commit.sh"
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-tool-check.sh"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
 #### Success Criteria
 - [ ] Code review skill automatically invoked when relevant
-- [ ] Pre-commit hook runs before git commits
-- [ ] You understand skill auto-invocation vs. hook triggers
+- [ ] PreToolUse hook runs before tool execution
+- [ ] You understand skill auto-invocation vs. hook event triggers
 
 #### Next Steps
 - Create your own custom skill
@@ -188,7 +198,7 @@ chmod +x ~/.claude/hooks/pre-commit.sh
 ```bash
 # Exercise 1: Set up GitHub MCP
 export GITHUB_TOKEN="your_github_token"
-cp 05-mcp/github-mcp.json ~/.claude/mcp.json
+claude mcp add github -- npx -y @modelcontextprotocol/server-github
 
 # Exercise 2: Test MCP integration
 # In Claude Code: /mcp__github__list_prs
@@ -233,35 +243,42 @@ Try this complete workflow:
 #### What You'll Achieve
 ✅ Safe experimentation with checkpoints
 ✅ Planning mode for complex features
-✅ Headless mode for CI/CD
-✅ Fine-grained permission control
+✅ Print mode (`claude -p`) for CI/CD automation
+✅ Fine-grained permission control (default, acceptEdits, plan, dontAsk, bypassPermissions)
 ✅ Background task management
+✅ Auto Memory for learned preferences
+✅ Extended thinking via Alt+T / Option+T toggle
 
 #### Hands-on Exercises
 
 ```bash
 # Exercise 1: Try checkpoint workflow
 # In Claude Code:
-/checkpoint save "Before experiment"
-# ... make experimental changes ...
-/checkpoint rewind "Before experiment"
+# Make some experimental changes, then press Esc+Esc or use /rewind
+# Select the checkpoint before your experiment
+# Choose "Restore code and conversation" to go back
 
 # Exercise 2: Use planning mode
 /plan Implement user authentication system
 
-# Exercise 3: Try headless mode
-claude-code --headless --task "Run all tests and generate report"
+# Exercise 3: Try print mode (non-interactive)
+claude -p "Run all tests and generate report"
 
-# Exercise 4: Configure advanced features
-# See 09-advanced-features/config-examples.json
+# Exercise 4: Try permission modes
+claude --permission-mode plan "analyze this codebase"
+claude --permission-mode acceptEdits "refactor the auth module"
+
+# Exercise 5: Enable extended thinking
+# Press Alt+T (Option+T on macOS) during a session to toggle
 ```
 
 #### Success Criteria
 - [ ] Created and reverted to a checkpoint
 - [ ] Used planning mode for a complex feature
-- [ ] Ran Claude Code in headless mode
-- [ ] Configured permission modes
+- [ ] Ran Claude Code in print mode (`claude -p`)
+- [ ] Configured permission modes (plan, acceptEdits, dontAsk)
 - [ ] Used background tasks for long operations
+- [ ] Toggled extended thinking with Alt+T / Option+T
 
 #### Advanced Exercise
 Complete this end-to-end workflow:
@@ -271,7 +288,7 @@ Complete this end-to-end workflow:
 4. Run tests in background
 5. If tests fail, rewind to checkpoint
 6. Try alternative approach
-7. Use headless mode in CI/CD
+7. Use print mode (`claude -p`) in CI/CD
 
 #### Next Steps
 - Set up CI/CD integration
@@ -474,7 +491,7 @@ Use this checklist to track your progress:
 - [ ] Completed 03-skills
 - [ ] Completed 06-hooks
 - [ ] Installed first skill
-- [ ] Set up pre-commit hook
+- [ ] Set up PreToolUse hook
 - [ ] Milestone 2 achieved
 
 ### Week 3-4: Integration
@@ -490,7 +507,9 @@ Use this checklist to track your progress:
 - [ ] Completed 08-checkpoints
 - [ ] Completed 09-advanced-features
 - [ ] Used planning mode successfully
-- [ ] Set up headless CI/CD
+- [ ] Set up print mode (`claude -p`) CI/CD
+- [ ] Configured permission modes
+- [ ] Used extended thinking toggle
 - [ ] Created team plugin
 - [ ] Milestone 4 achieved
 
@@ -530,19 +549,23 @@ Once you've completed all milestones:
 
 1. **Create team documentation** - Document your team's Claude Code setup
 2. **Build custom plugins** - Package your team's workflows
-3. **Contribute examples** - Share with the community
-4. **Mentor others** - Help teammates learn
-5. **Optimize workflows** - Continuously improve based on usage
-6. **Stay updated** - Follow Claude Code releases and new features
+3. **Explore Remote Control** - Control Claude Code sessions programmatically from external tools
+4. **Try Web Sessions** - Use Claude Code through browser-based interfaces for remote development
+5. **Use the Desktop App** - Access Claude Code features through the native desktop application
+6. **Leverage Auto Memory** - Let Claude learn your preferences automatically over time
+7. **Contribute examples** - Share with the community
+8. **Mentor others** - Help teammates learn
+9. **Optimize workflows** - Continuously improve based on usage
+10. **Stay updated** - Follow Claude Code releases and new features
 
 ---
 
 ## 📚 Additional Resources
 
 ### Official Documentation
-- [Claude Code Documentation](https://docs.claude.com/en/docs/claude-code)
+- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [Anthropic Documentation](https://docs.anthropic.com)
 - [MCP Protocol Specification](https://modelcontextprotocol.io)
-- [Plugin Marketplace](https://plugins.claude.com)
 
 ### Blog Posts
 - [Discovering Claude Code Slash Commands](https://medium.com/@luongnv89/discovering-claude-code-slash-commands-cdc17f0dfb29)
@@ -561,7 +584,7 @@ Once you've completed all milestones:
 
 ---
 
-**Last Updated**: December 2025
+**Last Updated**: February 2026
 **Maintained by**: Claude How-To Contributors
 **License**: Educational purposes, free to use and adapt
 

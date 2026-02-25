@@ -18,13 +18,19 @@ Subagents are specialized AI assistants that Claude Code can delegate tasks to. 
 7. [Using Subagents](#using-subagents)
 8. [Resumable Agents](#resumable-agents)
 9. [Chaining Subagents](#chaining-subagents)
-10. [Architecture](#architecture)
-11. [Context Management](#context-management)
-12. [When to Use Subagents](#when-to-use-subagents)
-13. [Best Practices](#best-practices)
-14. [Example Subagents in This Folder](#example-subagents-in-this-folder)
-15. [Installation Instructions](#installation-instructions)
-16. [Related Concepts](#related-concepts)
+10. [Persistent Memory for Subagents](#persistent-memory-for-subagents)
+11. [Background Subagents](#background-subagents)
+12. [Worktree Isolation](#worktree-isolation)
+13. [Restrict Spawnable Subagents](#restrict-spawnable-subagents)
+14. [`claude agents` CLI Command](#claude-agents-cli-command)
+15. [Agent Teams (Experimental)](#agent-teams-experimental)
+16. [Architecture](#architecture)
+17. [Context Management](#context-management)
+18. [When to Use Subagents](#when-to-use-subagents)
+19. [Best Practices](#best-practices)
+20. [Example Subagents in This Folder](#example-subagents-in-this-folder)
+21. [Installation Instructions](#installation-instructions)
+22. [Related Concepts](#related-concepts)
 
 ---
 
@@ -82,9 +88,15 @@ Subagents are defined in YAML frontmatter followed by the system prompt in markd
 name: your-sub-agent-name
 description: Description of when this subagent should be invoked
 tools: tool1, tool2, tool3  # Optional - inherits all tools if omitted
-model: sonnet  # Optional - specify model alias or 'inherit'
+disallowedTools: tool4  # Optional - explicitly disallowed tools
+model: sonnet  # Optional - sonnet, opus, haiku, or inherit
 permissionMode: default  # Optional - permission mode
-skills: skill1, skill2  # Optional - skills to auto-load
+maxTurns: 20  # Optional - limit agentic turns
+skills: skill1, skill2  # Optional - skills to preload into context
+mcpServers: server1  # Optional - MCP servers to make available
+memory: user  # Optional - persistent memory scope (user, project, local)
+background: false  # Optional - run as background task
+isolation: worktree  # Optional - git worktree isolation
 hooks:  # Optional - component-scoped hooks
   PreToolUse:
     - matcher: "Bash"
@@ -104,11 +116,17 @@ to solving problems.
 |-------|----------|-------------|
 | `name` | Yes | Unique identifier (lowercase letters and hyphens) |
 | `description` | Yes | Natural language description of purpose. Include "use PROACTIVELY" to encourage automatic invocation |
-| `tools` | No | Comma-separated list of specific tools. Omit to inherit all tools |
+| `tools` | No | Comma-separated list of specific tools. Omit to inherit all tools. Supports `Task(agent_name)` syntax to restrict spawnable subagents |
+| `disallowedTools` | No | Comma-separated list of tools the subagent must not use |
 | `model` | No | Model to use: `sonnet`, `opus`, `haiku`, or `inherit`. Defaults to configured subagent model |
 | `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `ignore` |
-| `skills` | No | Comma-separated list of skills to auto-load |
+| `maxTurns` | No | Maximum number of agentic turns the subagent can take |
+| `skills` | No | Comma-separated list of skills to preload. Injects full skill content into the subagent's context at startup |
+| `mcpServers` | No | MCP servers to make available to the subagent |
 | `hooks` | No | Component-scoped hooks (PreToolUse, PostToolUse, Stop) |
+| `memory` | No | Persistent memory directory scope: `user`, `project`, or `local` |
+| `background` | No | Set to `true` to always run this subagent as a background task |
+| `isolation` | No | Set to `worktree` to give the subagent its own git worktree |
 
 ### Tool Configuration Options
 
@@ -179,29 +197,38 @@ This allows CLI definitions to override both user and project agents for a singl
 
 ## Built-in Subagents
 
-Claude Code includes three built-in subagents that are always available:
+Claude Code includes several built-in subagents that are always available:
 
-### 1. General-Purpose Subagent
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| **general-purpose** | Inherits | Complex, multi-step tasks |
+| **Plan** | Inherits | Research for plan mode |
+| **Explore** | Haiku | Read-only codebase exploration (quick/medium/very thorough) |
+| **Bash** | Inherits | Terminal commands in separate context |
+| **statusline-setup** | Sonnet | Configure status line |
+| **Claude Code Guide** | Haiku | Answer Claude Code feature questions |
+
+### General-Purpose Subagent
 
 | Property | Value |
 |----------|-------|
-| **Model** | Sonnet |
+| **Model** | Inherits from parent |
 | **Tools** | All tools |
 | **Purpose** | Complex research tasks, multi-step operations, code modifications |
 
 **When used**: Tasks requiring both exploration and modification with complex reasoning.
 
-### 2. Plan Subagent
+### Plan Subagent
 
 | Property | Value |
 |----------|-------|
-| **Model** | Sonnet |
+| **Model** | Inherits from parent |
 | **Tools** | Read, Glob, Grep, Bash |
 | **Purpose** | Used automatically in plan mode to research codebase |
 
 **When used**: When Claude needs to understand the codebase before presenting a plan.
 
-### 3. Explore Subagent
+### Explore Subagent
 
 | Property | Value |
 |----------|-------|
@@ -216,6 +243,36 @@ Claude Code includes three built-in subagents that are always available:
 - **"quick"** - Fast searches with minimal exploration, good for finding specific patterns
 - **"medium"** - Moderate exploration, balanced speed and thoroughness, default approach
 - **"very thorough"** - Comprehensive analysis across multiple locations and naming conventions, may take longer
+
+### Bash Subagent
+
+| Property | Value |
+|----------|-------|
+| **Model** | Inherits from parent |
+| **Tools** | Bash |
+| **Purpose** | Execute terminal commands in a separate context window |
+
+**When used**: When running shell commands that benefit from isolated context.
+
+### Statusline Setup Subagent
+
+| Property | Value |
+|----------|-------|
+| **Model** | Sonnet |
+| **Tools** | Read, Write, Bash |
+| **Purpose** | Configure the Claude Code status line display |
+
+**When used**: When setting up or customizing the status line.
+
+### Claude Code Guide Subagent
+
+| Property | Value |
+|----------|-------|
+| **Model** | Haiku (fast, low-latency) |
+| **Tools** | Read-only |
+| **Purpose** | Answer questions about Claude Code features and usage |
+
+**When used**: When users ask questions about how Claude Code works or how to use specific features.
 
 ---
 
@@ -316,6 +373,187 @@ Execute multiple subagents in sequence:
 ```
 
 This enables complex workflows where the output of one subagent feeds into another.
+
+---
+
+## Persistent Memory for Subagents
+
+The `memory` field gives subagents a persistent directory that survives across conversations. This allows subagents to build up knowledge over time, storing notes, findings, and context that persist between sessions.
+
+### Memory Scopes
+
+| Scope | Directory | Use Case |
+|-------|-----------|----------|
+| `user` | `~/.claude/agent-memory/<name>/` | Personal notes and preferences across all projects |
+| `project` | `.claude/agent-memory/<name>/` | Project-specific knowledge shared with the team |
+| `local` | `.claude/agent-memory-local/<name>/` | Local project knowledge not committed to version control |
+
+### How It Works
+
+- The first 200 lines of `MEMORY.md` in the memory directory are automatically loaded into the subagent's system prompt
+- The `Read`, `Write`, and `Edit` tools are automatically enabled for the subagent to manage its memory files
+- The subagent can create additional files in its memory directory as needed
+
+### Example Configuration
+
+```yaml
+---
+name: researcher
+memory: user
+---
+
+You are a research assistant. Use your memory directory to store findings,
+track progress across sessions, and build up knowledge over time.
+
+Check your MEMORY.md file at the start of each session to recall previous context.
+```
+
+```mermaid
+graph LR
+    A["Subagent<br/>Session 1"] -->|writes| M["MEMORY.md<br/>(persistent)"]
+    M -->|loads into| B["Subagent<br/>Session 2"]
+    B -->|updates| M
+    M -->|loads into| C["Subagent<br/>Session 3"]
+
+    style A fill:#e1f5fe,stroke:#333,color:#333
+    style B fill:#e1f5fe,stroke:#333,color:#333
+    style C fill:#e1f5fe,stroke:#333,color:#333
+    style M fill:#f3e5f5,stroke:#333,color:#333
+```
+
+---
+
+## Background Subagents
+
+Subagents can run in the background, freeing up the main conversation for other tasks.
+
+### Configuration
+
+Set `background: true` in the frontmatter to always run the subagent as a background task:
+
+```yaml
+---
+name: long-runner
+background: true
+description: Performs long-running analysis tasks in the background
+---
+```
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+B` | Background a currently running subagent task |
+| `Ctrl+F` | Kill all background agents (press twice to confirm) |
+
+### Disabling Background Tasks
+
+Set the environment variable to disable background task support entirely:
+
+```bash
+export CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1
+```
+
+---
+
+## Worktree Isolation
+
+The `isolation: worktree` setting gives a subagent its own git worktree, allowing it to make changes independently without affecting the main working tree.
+
+### Configuration
+
+```yaml
+---
+name: feature-builder
+isolation: worktree
+description: Implements features in an isolated git worktree
+tools: Read, Write, Edit, Bash, Grep, Glob
+---
+```
+
+### How It Works
+
+```mermaid
+graph TB
+    Main["Main Working Tree"] -->|spawns| Sub["Subagent with<br/>Isolated Worktree"]
+    Sub -->|makes changes in| WT["Separate Git<br/>Worktree + Branch"]
+    WT -->|no changes| Clean["Auto-cleaned"]
+    WT -->|has changes| Return["Returns worktree<br/>path and branch"]
+
+    style Main fill:#e1f5fe,stroke:#333,color:#333
+    style Sub fill:#f3e5f5,stroke:#333,color:#333
+    style WT fill:#e8f5e9,stroke:#333,color:#333
+    style Clean fill:#fff3e0,stroke:#333,color:#333
+    style Return fill:#fff3e0,stroke:#333,color:#333
+```
+
+- The subagent operates in its own git worktree on a separate branch
+- If the subagent makes no changes, the worktree is automatically cleaned up
+- If changes exist, the worktree path and branch name are returned to the main agent for review or merging
+
+---
+
+## Restrict Spawnable Subagents
+
+You can control which subagents a given subagent is allowed to spawn by using the `Task(agent_type)` syntax in the `tools` field. This provides a way to allowlist specific subagents for delegation.
+
+### Example
+
+```yaml
+---
+name: coordinator
+description: Coordinates work between specialized agents
+tools: Task(worker, researcher), Read, Bash
+---
+
+You are a coordinator agent. You can delegate work to the "worker" and
+"researcher" subagents only. Use Read and Bash for your own exploration.
+```
+
+In this example, the `coordinator` subagent can only spawn the `worker` and `researcher` subagents. It cannot spawn any other subagents, even if they are defined elsewhere.
+
+---
+
+## `claude agents` CLI Command
+
+The `claude agents` command lists all configured agents grouped by source (built-in, user-level, project-level):
+
+```bash
+claude agents
+```
+
+This command:
+- Shows all available agents from all sources
+- Groups agents by their source location
+- Indicates **overrides** when an agent at a higher priority level shadows one at a lower level (e.g., a project-level agent with the same name as a user-level agent)
+
+---
+
+## Agent Teams (Experimental)
+
+Agent teams allow multiple agents to work together on complex tasks, coordinating across separate contexts.
+
+### Enabling Agent Teams
+
+```bash
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+```
+
+### Display Mode
+
+Control how teammate activity is displayed using the `--teammate-mode` flag:
+
+| Mode | Description |
+|------|-------------|
+| `auto` | Automatically choose the best display mode |
+| `in-process` | Show teammate output inline in the current terminal |
+| `tmux` | Show each teammate in a separate tmux pane |
+
+```bash
+claude --teammate-mode tmux
+```
+
+> **Note**: Agent teams is an experimental feature and may change in future releases.
 
 ---
 
@@ -710,6 +948,6 @@ graph TD
 
 ---
 
-*Last updated: December 2024*
+*Last updated: February 2026*
 
 *This guide covers complete subagent configuration, delegation patterns, and best practices for Claude Code.*

@@ -557,30 +557,50 @@ graph TB
     A -->|Uses context| C
 ```
 
-### Memory Hierarchy in Claude Code
+### Memory Hierarchy in Claude Code (7 Tiers)
+
+Claude Code loads memory from 7 tiers, listed from highest to lowest priority:
 
 ```mermaid
 graph TD
-    A["Project Root"] -->|searches up| B["CLAUDE.md"]
-    B -->|highest priority| B1["Global instructions"]
-    A -->|searches down| C["Subdirectory CLAUDE.md"]
-    C -->|specific overrides| C1["Directory-specific rules"]
-    H["User Home"] -->|fallback| D["~/.claude/CLAUDE.md"]
-    D -->|personal preferences| D1["Personal settings"]
+    A["1. Managed Policy<br/>Enterprise admin policies"] --> B["2. Project Memory<br/>./CLAUDE.md"]
+    B --> C["3. Project Rules<br/>.claude/rules/*.md"]
+    C --> D["4. User Memory<br/>~/.claude/CLAUDE.md"]
+    D --> E["5. User Rules<br/>~/.claude/rules/*.md"]
+    E --> F["6. Local Memory<br/>.claude/local/CLAUDE.md"]
+    F --> G["7. Auto Memory<br/>Automatically captured preferences"]
 
-    B1 -->|imports| E["@docs/architecture.md"]
-    E -->|imports| F["@docs/api-standards.md"]
+    style A fill:#fce4ec,stroke:#333,color:#333
+    style B fill:#e1f5fe,stroke:#333,color:#333
+    style C fill:#e1f5fe,stroke:#333,color:#333
+    style D fill:#f3e5f5,stroke:#333,color:#333
+    style E fill:#f3e5f5,stroke:#333,color:#333
+    style F fill:#e8f5e9,stroke:#333,color:#333
+    style G fill:#fff3e0,stroke:#333,color:#333
 ```
 
 ### Memory Locations Table
 
-| Location | Scope | Priority | Shared | Access | Best For |
-|----------|-------|----------|--------|--------|----------|
-| `./CLAUDE.md` | Project | High | Team | Git | Team standards, shared architecture |
-| `./.claude/CLAUDE.md` | Project | High | Team | Git | Alternative project location |
-| `./subdir/CLAUDE.md` | Directory | Medium | Team | Git | Directory-specific rules |
-| `~/.claude/CLAUDE.md` | Personal | Low | Individual | Filesystem | Personal preferences |
-| `~/.claude/my-project.md` | Personal | Low | Individual | Import | Project-specific personal notes |
+| Tier | Location | Scope | Priority | Shared | Best For |
+|------|----------|-------|----------|--------|----------|
+| 1. Managed Policy | Enterprise admin | Organization | Highest | All org users | Compliance, security policies |
+| 2. Project | `./CLAUDE.md` | Project | High | Team (Git) | Team standards, architecture |
+| 3. Project Rules | `.claude/rules/*.md` | Project | High | Team (Git) | Modular project conventions |
+| 4. User | `~/.claude/CLAUDE.md` | Personal | Medium | Individual | Personal preferences |
+| 5. User Rules | `~/.claude/rules/*.md` | Personal | Medium | Individual | Personal rule modules |
+| 6. Local | `.claude/local/CLAUDE.md` | Local | Low | Not shared | Machine-specific settings |
+| 7. Auto Memory | Automatic | Session | Lowest | Individual | Learned preferences, patterns |
+
+### Auto Memory
+
+Auto Memory automatically captures user preferences and patterns observed during sessions. Claude learns from your interactions and remembers:
+
+- Coding style preferences
+- Common corrections you make
+- Framework and tool choices
+- Communication style preferences
+
+Auto Memory works in the background and does not require manual configuration.
 
 ### Memory Update Lifecycle
 
@@ -996,7 +1016,7 @@ sequenceDiagram
 
 #### Example 1: GitHub MCP Configuration
 
-**File:** `.claude/mcp.json`
+**File:** `.mcp.json` (project scope) or `~/.claude.json` (user scope)
 
 ```json
 {
@@ -2221,7 +2241,8 @@ config:
 
 ```
 my-plugin/
-├── plugin.yaml
+├── .claude-plugin/
+│   └── plugin.json
 ├── commands/
 │   ├── task-1.md
 │   ├── task-2.md
@@ -2230,12 +2251,14 @@ my-plugin/
 │   ├── specialist-1.md
 │   ├── specialist-2.md
 │   └── configs/
-├── mcp/
-│   ├── mcp-config.json
-│   └── servers/
+├── skills/
+│   ├── skill-1.md
+│   └── skill-2.md
 ├── hooks/
-│   ├── pre-deploy.js
-│   └── post-merge.js
+│   └── hooks.json
+├── .mcp.json
+├── .lsp.json
+├── settings.json
 ├── templates/
 │   └── issue-template.md
 ├── scripts/
@@ -2252,29 +2275,18 @@ my-plugin/
 
 #### Example 1: PR Review Plugin
 
-**File:** `plugin.yaml`
+**File:** `.claude-plugin/plugin.json`
 
-```yaml
----
-name: pr-review
-version: "1.0.0"
-description: Complete PR review workflow with security, testing, and docs
-author: Anthropic
-tags:
-  - code-review
-  - quality
-  - security
-
-components:
-  - type: commands
-    path: commands/
-  - type: agents
-    path: agents/
-  - type: mcp
-    path: mcp/
-  - type: hooks
-    path: hooks/
----
+```json
+{
+  "name": "pr-review",
+  "version": "1.0.0",
+  "description": "Complete PR review workflow with security, testing, and docs",
+  "author": {
+    "name": "Anthropic"
+  },
+  "license": "MIT"
+}
 ```
 
 **File:** `commands/review-pr.md`
@@ -2470,7 +2482,7 @@ graph TD
 **Steps to publish:**
 
 1. Create plugin structure with all components
-2. Write `plugin.yaml` manifest
+2. Write `.claude-plugin/plugin.json` manifest
 3. Create `README.md` with documentation
 4. Test locally with `/plugin install ./my-plugin`
 5. Submit to plugin marketplace
@@ -2775,36 +2787,59 @@ graph TD
 
 Hooks are event-driven shell commands that execute automatically in response to Claude Code events. They enable automation, validation, and custom workflows without manual intervention.
 
-### Hook Types
+### Hook Events
 
-| Hook Type | Event | Use Cases |
-|-----------|-------|-----------|
-| **Tool Hooks** | PreToolUse:*, PostToolUse:* | Auto-formatting, validation, logging |
-| **Session Hooks** | UserPromptSubmit, SessionStart, SessionEnd | Input validation, initialization, cleanup |
-| **Git Hooks** | PreCommit, PostCommit, PrePush | Testing, linting, notifications |
+| Hook Event | Trigger | Use Cases |
+|------------|---------|-----------|
+| **PreToolUse** | Before any tool runs | Validation, approval gates, logging |
+| **PostToolUse** | After any tool runs | Auto-formatting, notifications, cleanup |
+| **Stop** | When the main agent stops | Summary generation, cleanup tasks |
+| **SubagentStop** | When a subagent stops | Result validation, logging |
+| **SubagentStart** | When a subagent starts | Context injection, initialization |
+| **Notification** | On notification events | Alerting, external integrations |
+| **WorktreeCreate** | When a worktree is created | Environment setup, dependency install |
+| **WorktreeRemove** | When a worktree is removed | Cleanup, resource deallocation |
+| **ConfigChange** | When configuration changes | Validation, propagation |
 
 ### Common Hooks
 
-```bash
-# Pre-commit hook - run tests
-PreCommit: "npm test"
+Hooks are configured in `~/.claude/settings.json` (user-level) or `.claude/settings.json` (project-level):
 
-# Post-write hook - format code
-PostToolUse:Write: "prettier --write ${file_path}"
-
-# Pre-tool-use hook - validate
-PreToolUse:Edit: "eslint ${file_path}"
-
-# User prompt validation
-UserPromptSubmit: "~/.claude/hooks/validate-prompt.sh"
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "prettier --write $CLAUDE_FILE_PATH"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "eslint $CLAUDE_FILE_PATH"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
-### Hook Variables
+### Hook Environment Variables
 
-- `${file_path}` - Path to file being edited/written
-- `${command}` - Command being executed (Bash hooks)
-- `${tool_name}` - Name of tool being used
-- `${session_id}` - Current session identifier
+- `$CLAUDE_FILE_PATH` - Path to file being edited/written
+- `$CLAUDE_TOOL_NAME` - Name of tool being used
+- `$CLAUDE_SESSION_ID` - Current session identifier
+- `$CLAUDE_PROJECT_DIR` - Project directory path
 
 ### Best Practices
 
@@ -2837,27 +2872,24 @@ Checkpoints allow you to save conversation state and rewind to previous points, 
 | **Rewind** | Return to a previous checkpoint, discarding subsequent changes |
 | **Branch Point** | Checkpoint from which multiple approaches are explored |
 
-### Commands
+### Accessing Checkpoints
+
+Checkpoints are created automatically with every user prompt. To rewind:
 
 ```bash
-# Create checkpoint
-/checkpoint save "Before refactoring"
+# Press Esc twice to open the checkpoint browser
+Esc + Esc
 
-# List checkpoints
-/checkpoint list
-
-# Rewind to checkpoint
-/checkpoint rewind "Before refactoring"
-
-# Compare checkpoints
-/checkpoint diff checkpoint-1 checkpoint-2
-
-# Delete checkpoint
-/checkpoint delete checkpoint-1
-
-# Export checkpoint
-/checkpoint export "name" ~/checkpoints/backup.json
+# Or use the /rewind command
+/rewind
 ```
+
+When you select a checkpoint, you choose from five options:
+1. **Restore code and conversation** -- Revert both to that point
+2. **Restore conversation** -- Rewind messages, keep current code
+3. **Restore code** -- Revert files, keep conversation
+4. **Summarize from here** -- Compress conversation into a summary
+5. **Never mind** -- Cancel
 
 ### Use Cases
 
@@ -2872,12 +2904,7 @@ Checkpoints allow you to save conversation state and rewind to previous points, 
 
 ```json
 {
-  "checkpoints": {
-    "autoCheckpoint": true,
-    "autoCheckpointInterval": 30,
-    "maxCheckpoints": 20,
-    "compressionEnabled": true
-  }
+  "autoCheckpoint": true
 }
 ```
 
@@ -2907,8 +2934,13 @@ Create detailed implementation plans before coding.
 Deep reasoning for complex problems.
 
 **Activation:**
+- Toggle with `Alt+T` (or `Option+T` on macOS) during a session
+- Set `MAX_THINKING_TOKENS` environment variable for programmatic control
+
 ```bash
-/think Should we use microservices or monolith?
+# Enable extended thinking via environment variable
+export MAX_THINKING_TOKENS=50000
+claude -p "Should we use microservices or monolith?"
 ```
 
 **Benefits:**
@@ -2939,33 +2971,37 @@ Control what Claude can do.
 
 | Mode | Description | Use Case |
 |------|-------------|----------|
-| **Unrestricted** | Full access (default) | Active development |
-| **Confirm** | Ask before actions | Learning, pair programming |
-| **Read-only** | Analysis only | Code review |
-| **Custom** | Granular permissions | Fine-tuned control |
+| **default** | Standard permissions with prompts for sensitive actions | General development |
+| **acceptEdits** | Automatically accept file edits without confirmation | Trusted editing workflows |
+| **plan** | Analysis and planning only, no file modifications | Code review, architecture planning |
+| **dontAsk** | Execute all actions without confirmation prompts | Experienced users, automation |
+| **bypassPermissions** | Full unrestricted access, no safety checks | CI/CD pipelines, trusted scripts |
 
-**Commands:**
+**Usage:**
 ```bash
-/permission readonly    # Code review mode
-/permission confirm     # Learning mode
-/permission unrestricted # Full automation
+claude --permission-mode plan          # Read-only analysis
+claude --permission-mode acceptEdits   # Auto-accept edits
+claude --permission-mode dontAsk       # No confirmation prompts
 ```
 
-### Headless Mode
+### Headless Mode (Print Mode)
 
-Run Claude Code without interactive input for automation and CI/CD.
+Run Claude Code without interactive input for automation and CI/CD using the `-p` (print) flag.
 
 **Usage:**
 ```bash
 # Run specific task
-claude-code --headless --task "Run all tests"
+claude -p "Run all tests"
 
-# From script file
-claude-code --headless --script ./deploy.claude
+# Pipe input for analysis
+cat error.log | claude -p "explain this error"
 
 # CI/CD integration (GitHub Actions)
 - name: AI Code Review
-  run: claude-code --headless --task "Review PR"
+  run: claude -p "Review PR changes and report issues"
+
+# JSON output for scripting
+claude -p --output-format json "list all functions in src/"
 ```
 
 ### Session Management
@@ -2974,11 +3010,11 @@ Manage multiple work sessions.
 
 **Commands:**
 ```bash
-/session list           # Show all sessions
-/session new "Feature"  # Create new session
-/session switch "Bug"   # Switch sessions
-/session save           # Save current state
-/session load "name"    # Load saved session
+/resume                # Resume a previous conversation
+/rename "Feature"      # Name the current session
+/fork                  # Fork into a new session
+claude -c              # Continue most recent conversation
+claude -r "Feature"    # Resume session by name/ID
 ```
 
 ### Interactive Features
@@ -3016,11 +3052,7 @@ Complete configuration example:
     "maxConcurrentTasks": 5
   },
   "permissions": {
-    "mode": "unrestricted"
-  },
-  "headless": {
-    "exitOnError": true,
-    "verbose": true
+    "mode": "default"
   }
 }
 ```
@@ -3031,13 +3063,13 @@ Complete configuration example:
 
 ## Resources
 
-- [Claude Documentation](https://docs.claude.com)
+- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [Anthropic Documentation](https://docs.anthropic.com)
 - [MCP GitHub Servers](https://github.com/modelcontextprotocol/servers)
 - [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
-- [Claude Code Guide](https://docs.claude.com/en/docs/claude-code/overview)
 
 ---
 
-*Last updated: November 8, 2025*
-*For Claude Haiku 4.5, Sonnet 4.5, and Opus 4.1*
-*Now includes: Hooks, Checkpoints, Planning Mode, Extended Thinking, Background Tasks, Permission Modes, Headless Mode, and Session Management*
+*Last updated: February 2026*
+*For Claude Haiku 4.5, Sonnet 4.6, and Opus 4.6*
+*Now includes: Hooks, Checkpoints, Planning Mode, Extended Thinking, Background Tasks, Permission Modes, Headless Mode, Session Management, and Auto Memory*

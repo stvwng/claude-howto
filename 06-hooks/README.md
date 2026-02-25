@@ -14,7 +14,7 @@ Hooks are shell commands or LLM prompts that execute automatically when specific
 **Key features:**
 - Event-driven automation
 - JSON-based input/output
-- Support for command and prompt-based hooks
+- Support for command, prompt, and HTTP hook types
 - Pattern matching for tool-specific hooks
 
 ## Configuration
@@ -52,7 +52,7 @@ Hooks are configured in settings files with a specific structure:
 |-------|-------------|---------|
 | `matcher` | Pattern to match tool names (case-sensitive) | `"Write"`, `"Edit\|Write"`, `"*"` |
 | `hooks` | Array of hook definitions | `[{ "type": "command", ... }]` |
-| `type` | Hook type: `"command"` (bash) or `"prompt"` (LLM) | `"command"` |
+| `type` | Hook type: `"command"` (bash), `"prompt"` (LLM), or `"http"` (webhook) | `"command"` |
 | `command` | Shell command to execute | `"$CLAUDE_PROJECT_DIR/.claude/hooks/format.sh"` |
 | `timeout` | Optional timeout in seconds (default 60) | `30` |
 
@@ -65,22 +65,80 @@ Hooks are configured in settings files with a specific structure:
 | Wildcard | Matches all tools | `"*"` or `""` |
 | MCP tools | Server and tool pattern | `"mcp__memory__.*"` |
 
+## Hook Types
+
+Claude Code supports three hook types:
+
+### Command Hooks
+
+The default hook type. Executes a shell command and communicates via JSON stdin/stdout and exit codes.
+
+```json
+{
+  "type": "command",
+  "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate.py\"",
+  "timeout": 60
+}
+```
+
+### HTTP Hooks
+
+Remote webhook endpoints that receive the same JSON input as command hooks. HTTP hooks are routed through the sandbox when sandboxing is enabled. Environment variable interpolation in URLs requires an explicit `allowedEnvVars` list for security.
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "type": "http",
+      "url": "https://my-webhook.example.com/hook",
+      "matcher": "Write"
+    }]
+  }
+}
+```
+
+**Key properties:**
+- `"type": "http"` -- identifies this as an HTTP hook
+- `"url"` -- the webhook endpoint URL
+- Routed through sandbox when sandbox is enabled
+- Requires explicit `allowedEnvVars` list for any environment variable interpolation in the URL
+
+### Prompt Hooks
+
+LLM-evaluated prompts where the hook content is a prompt that Claude evaluates. Primarily used with `Stop` and `SubagentStop` events for intelligent task completion checking.
+
+```json
+{
+  "type": "prompt",
+  "prompt": "Evaluate if Claude completed all requested tasks.",
+  "timeout": 30
+}
+```
+
+The LLM evaluates the prompt and returns a structured decision (see [Prompt-Based Hooks](#prompt-based-hooks) for details).
+
 ## Hook Events
 
-Claude Code supports **9 hook events**:
+Claude Code supports **16 hook events**:
 
-| Event | When Triggered | Supports Matchers | Can Block | Common Use |
-|-------|---------------|-------------------|-----------|------------|
-| **PreToolUse** | Before tool execution | Yes (tool names) | Yes | Validate, modify inputs |
-| **PermissionRequest** | Permission dialog shown | Yes (tool names) | Yes | Auto-approve/deny |
-| **PostToolUse** | After tool completion | Yes (tool names) | Yes (block) | Add context, feedback |
-| **Notification** | Notification sent | Yes (notification types) | No | Custom notifications |
-| **UserPromptSubmit** | Before prompt processed | No | Yes | Validate prompts |
-| **Stop** | Agent finishes responding | No | Yes | Task completion check |
-| **SubagentStop** | Subagent finishes | No | Yes | Subagent validation |
-| **PreCompact** | Before compact operation | Yes (manual/auto) | No | Pre-compact actions |
-| **SessionStart** | Session begins/resumes | Yes (startup/resume/clear/compact) | No | Environment setup |
-| **SessionEnd** | Session ends (cleanup only) | No | No | Cleanup, final logging |
+| Event | When Triggered | Matcher Input | Can Block | Common Use |
+|-------|---------------|---------------|-----------|------------|
+| **PreToolUse** | Before tool execution | Tool name | Yes | Validate, modify inputs |
+| **PostToolUse** | After tool completion | Tool name | Yes (block) | Add context, feedback |
+| **PermissionRequest** | Permission dialog shown | Tool name | Yes | Auto-approve/deny |
+| **Notification** | Notification sent | Notification type | No | Custom notifications |
+| **UserPromptSubmit** | Before prompt processed | (none) | Yes | Validate prompts |
+| **Stop** | Session or subagent finishes | (none) | Yes | Task completion check |
+| **SubagentStart** | Subagent begins execution | Agent type name | No | Subagent setup |
+| **SubagentStop** | Subagent completes | Agent type name | Yes | Subagent validation |
+| **PreCompact** | Before compact operation | manual/auto | No | Pre-compact actions |
+| **SessionStart** | Session begins/resumes | startup/resume/clear/compact | No | Environment setup |
+| **SessionEnd** | Session ends (cleanup only) | (none) | No | Cleanup, final logging |
+| **WorktreeCreate** | Worktree created | (none) | No | Worktree initialization |
+| **WorktreeRemove** | Worktree removed | (none) | No | Worktree cleanup |
+| **ConfigChange** | Configuration files change | (none) | No | React to config updates |
+| **TeammateIdle** | Agent team teammate about to idle | (none) | No | Teammate coordination |
+| **TaskCompleted** | Task being marked complete | (none) | No | Post-task actions |
 
 ### PreToolUse
 
@@ -170,6 +228,8 @@ Runs when user submits a prompt, before Claude processes it.
 
 Run when Claude finishes responding (Stop) or a subagent completes (SubagentStop). Supports prompt-based evaluation for intelligent task completion checking.
 
+**Additional input field:** Both `Stop` and `SubagentStop` hooks receive a `last_assistant_message` field in their JSON input, containing the final message from Claude or the subagent before stopping. This is useful for evaluating task completion.
+
 **Configuration:**
 ```json
 {
@@ -181,6 +241,29 @@ Run when Claude finishes responding (Stop) or a subagent completes (SubagentStop
             "type": "prompt",
             "prompt": "Evaluate if Claude completed all requested tasks.",
             "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### SubagentStart
+
+Runs when a subagent begins execution. The matcher input is the agent type name, allowing hooks to target specific subagent types.
+
+**Configuration:**
+```json
+{
+  "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "code-review",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/subagent-init.sh"
           }
         ]
       }
@@ -264,6 +347,23 @@ hooks:
 **Supported events for component hooks:** `PreToolUse`, `PostToolUse`, `Stop`
 
 This allows defining hooks directly in the component that uses them, keeping related code together.
+
+### Hooks in Subagent Frontmatter
+
+When a `Stop` hook is defined in a subagent's frontmatter, it is automatically converted to a `SubagentStop` hook scoped to that subagent. This ensures that the stop hook only fires when that specific subagent completes, rather than when the main session stops.
+
+```yaml
+---
+name: code-review-agent
+description: Automated code review subagent
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "Verify the code review is thorough and complete."
+  # The above Stop hook auto-converts to SubagentStop for this subagent
+---
+```
 
 ## PermissionRequest Event
 
@@ -802,6 +902,12 @@ MCP tools follow the pattern `mcp__<server>__<tool>`:
 - Potential data loss or system damage
 - Testing hooks in safe environments before production use
 
+### Security Notes
+
+- **Workspace trust required:** The `statusLine` and `fileSuggestion` hook output commands now require workspace trust acceptance before they take effect.
+- **HTTP hooks and environment variables:** HTTP hooks require an explicit `allowedEnvVars` list to use environment variable interpolation in URLs. This prevents accidental leakage of sensitive environment variables to remote endpoints.
+- **Managed settings hierarchy:** The `disableAllHooks` setting now respects the managed settings hierarchy, meaning organization-level settings can enforce hook disablement that individual users cannot override.
+
 ### Best Practices
 
 | Do | Don't |
@@ -812,6 +918,7 @@ MCP tools follow the pattern `mcp__<server>__<tool>`:
 | Use absolute paths with `$CLAUDE_PROJECT_DIR` | Hardcode paths |
 | Skip sensitive files (`.env`, `.git/`, keys) | Process all files |
 | Test hooks in isolation first | Deploy untested hooks |
+| Use explicit `allowedEnvVars` for HTTP hooks | Expose all env vars to webhooks |
 
 ## Debugging
 

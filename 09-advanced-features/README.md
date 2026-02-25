@@ -5,7 +5,7 @@
 
 # Advanced Features
 
-Comprehensive guide to Claude Code's advanced capabilities including planning mode, extended thinking, background tasks, permission modes, headless operation, session management, interactive features, and configuration.
+Comprehensive guide to Claude Code's advanced capabilities including planning mode, extended thinking, background tasks, permission modes, print mode (non-interactive), session management, interactive features, remote control, web sessions, desktop app, task list, prompt suggestions, git worktrees, sandboxing, managed settings, and configuration.
 
 ## Table of Contents
 
@@ -17,9 +17,17 @@ Comprehensive guide to Claude Code's advanced capabilities including planning mo
 6. [Headless Mode](#headless-mode)
 7. [Session Management](#session-management)
 8. [Interactive Features](#interactive-features)
-9. [Configuration and Settings](#configuration-and-settings)
-10. [Best Practices](#best-practices)
-11. [Related Concepts](#related-concepts)
+9. [Remote Control](#remote-control)
+10. [Web Sessions](#web-sessions)
+11. [Desktop App](#desktop-app)
+12. [Task List](#task-list)
+13. [Prompt Suggestions](#prompt-suggestions)
+14. [Git Worktrees](#git-worktrees)
+15. [Sandboxing](#sandboxing)
+16. [Managed Settings (Enterprise)](#managed-settings-enterprise)
+17. [Configuration and Settings](#configuration-and-settings)
+18. [Best Practices](#best-practices)
+19. [Related Concepts](#related-concepts)
 
 ---
 
@@ -31,10 +39,18 @@ Advanced features in Claude Code extend the core capabilities with planning, rea
 - **Planning Mode**: Create detailed implementation plans before coding
 - **Extended Thinking**: Deep reasoning for complex problems
 - **Background Tasks**: Run long operations without blocking the conversation
-- **Permission Modes**: Control what Claude can do (unrestricted, confirm, read-only, custom)
-- **Headless Mode**: Run Claude Code without interactive input for automation and CI/CD
+- **Permission Modes**: Control what Claude can do (`default`, `acceptEdits`, `plan`, `dontAsk`, `bypassPermissions`)
+- **Print Mode**: Run Claude Code non-interactively for automation and CI/CD (`claude -p`)
 - **Session Management**: Manage multiple work sessions
 - **Interactive Features**: Keyboard shortcuts, multi-line input, and command history
+- **Remote Control**: Control Claude Code from Claude.ai or the Claude app
+- **Web Sessions**: Run Claude Code in the browser at claude.ai/code
+- **Desktop App**: Standalone app for visual diff review and multiple sessions
+- **Task List**: Persistent task tracking across context compactions
+- **Prompt Suggestions**: Smart command suggestions based on context
+- **Git Worktrees**: Isolated worktree branches for parallel work
+- **Sandboxing**: OS-level filesystem and network isolation
+- **Managed Settings**: Enterprise deployment via plist, Registry, or managed files
 - **Configuration**: Customize behavior with JSON configuration files
 
 ---
@@ -154,16 +170,23 @@ Claude: [Implements modified plan]
 
 ### Planning Mode Configuration
 
-```json
-{
-  "planning": {
-    "autoEnter": true,
-    "complexityThreshold": 3,
-    "requireApproval": true,
-    "showTimeEstimates": true
-  }
-}
+Planning mode is activated via the CLI flag or slash command:
+
+```bash
+# Activate plan mode via CLI
+claude --permission-mode plan
+
+# Or use the /plan slash command inside the REPL
+/plan Implement user authentication system
 ```
+
+**Model alias for planning**: Use `opusplan` as a model alias to use Opus for planning and Sonnet for execution:
+
+```bash
+claude --model opusplan "design and implement the new API"
+```
+
+**Edit plan externally**: Press `Ctrl+G` to open the current plan in your external editor for detailed modifications.
 
 ---
 
@@ -184,19 +207,26 @@ Extended thinking is a deliberate, step-by-step reasoning process where Claude:
 **Keyboard shortcut**:
 - `Option + T` (macOS) / `Alt + T` (Windows/Linux) - Toggle extended thinking
 
-**Per-request activation**:
-```bash
-ultrathink: Should we use microservices or monolith?
-```
-
 **Automatic activation**:
-- Enabled by default on Sonnet 4.5 and Opus 4.5
-- For sufficiently complex queries, Claude automatically uses extended thinking
+- Enabled by default for all models (Opus 4.6, Sonnet 4.6, Haiku 4.5)
+- Opus 4.6: Adaptive reasoning with effort levels (low/medium/high)
+- Other models: Fixed budget up to 31,999 tokens
+
+**Configuration methods**:
+- Toggle: `Alt+T` / `Option+T`, or via `/config`
+- View reasoning: `Ctrl+O` (verbose mode)
 
 **Custom budget**:
 ```bash
 export MAX_THINKING_TOKENS=1024
 ```
+
+**Effort level** (Opus 4.6 only):
+```bash
+export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, or high
+```
+
+> **Note:** Words like "think" or "ultrathink" in prompts are interpreted as regular prompt instructions, not special keywords or triggers.
 
 ### Benefits of Extended Thinking
 
@@ -278,16 +308,17 @@ This approach balances your current constraints (team size, timeline, DevOps res
 
 ### Extended Thinking Configuration
 
-```json
-{
-  "extendedThinking": {
-    "enabled": true,
-    "showThinkingProcess": true,
-    "minThinkingTime": 5,
-    "maxThinkingTime": 60
-  }
-}
+Extended thinking is controlled via environment variables and keyboard shortcuts rather than JSON config:
+
+```bash
+# Set thinking token budget
+export MAX_THINKING_TOKENS=16000
+
+# Set effort level (Opus 4.6 only)
+export CLAUDE_CODE_EFFORT_LEVEL=high
 ```
+
+Toggle during a session with `Alt+T` / `Option+T`, or configure via `/config`.
 
 ---
 
@@ -422,14 +453,13 @@ Permission modes control what actions Claude can take without explicit approval.
 
 ### Available Permission Modes
 
-| Mode | Description | Use Case |
-|------|-------------|----------|
-| **default** | Full access, asks for confirmation | Active development |
-| **acceptEdits** | Automatically accepts file edits | Development workflow |
-| **dontAsk** | No confirmation needed | Fully automated |
-| **bypassPermissions** | Bypass all permission checks | Trusted automation |
-| **plan** | Planning mode before implementation | Review before execution |
-| **ignore** | Ignore permission restrictions | Advanced usage |
+| Mode | Behavior |
+|---|---|
+| `default` | Standard: prompts for permission |
+| `acceptEdits` | Auto-accepts file edits |
+| `plan` | Read-only analysis mode |
+| `dontAsk` | Auto-denies unless pre-approved |
+| `bypassPermissions` | Skips all checks (dangerous) |
 
 ### Activation Methods
 
@@ -495,7 +525,7 @@ Claude: [Makes changes without asking]
 
 **Code Review**:
 ```
-User: /permission readonly
+User: claude --permission-mode plan
 User: Review this PR and suggest improvements
 
 Claude: [Reads code, provides feedback, but cannot modify]
@@ -503,7 +533,7 @@ Claude: [Reads code, provides feedback, but cannot modify]
 
 **Pair Programming**:
 ```
-User: /permission confirm
+User: claude --permission-mode default
 User: Let's implement the feature together
 
 Claude: [Asks for approval before each change]
@@ -511,51 +541,51 @@ Claude: [Asks for approval before each change]
 
 **Automated Tasks**:
 ```
-User: /permission unrestricted
-User: Run the full deployment pipeline
+User: claude --permission-mode acceptEdits
+User: Fix all linting issues in the codebase
 
-Claude: [Executes all steps without asking]
+Claude: [Auto-accepts file edits without asking]
 ```
 
 ---
 
 ## Headless Mode
 
-Headless mode allows Claude Code to run without interactive input, perfect for automation and CI/CD.
+Print mode (`claude -p`) allows Claude Code to run without interactive input, perfect for automation and CI/CD. This is the non-interactive mode, replacing the older `--headless` flag.
 
-### What is Headless Mode?
+### What is Print Mode?
 
-Headless mode enables:
+Print mode enables:
 - Automated script execution
 - CI/CD integration
 - Batch processing
 - Scheduled tasks
 
-### Running in Headless Mode
+### Running in Print Mode (Non-Interactive)
 
 ```bash
 # Run specific task
-claude-code --headless --task "Run all tests"
+claude -p "Run all tests"
 
-# From script file
-claude-code --headless --script ./deploy.claude
+# Process piped content
+cat error.log | claude -p "Analyze these errors"
 
 # CI/CD integration (GitHub Actions)
 - name: AI Code Review
-  run: claude-code --headless --task "Review PR"
+  run: claude -p "Review PR"
 ```
 
-### Additional Headless Usage Examples
+### Additional Print Mode Usage Examples
 
 ```bash
 # Run a specific task with output capture
-claude-code --headless --task "Run all tests and generate coverage report"
+claude -p "Run all tests and generate coverage report"
 
-# Run from a script file
-claude-code --headless --script ./tasks/deploy.claude
+# With structured output
+claude -p --output-format json "Analyze code quality"
 
 # With input from stdin
-echo "Analyze code quality" | claude-code --headless
+echo "Analyze code quality" | claude -p "explain this"
 ```
 
 ### Example: CI/CD Integration
@@ -571,62 +601,55 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
 
       - name: Run Claude Code Review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          claude-code --headless --task "Review this PR for:
-          - Code quality issues
-          - Security vulnerabilities
-          - Performance concerns
-          - Test coverage
-          Output results to review-report.md"
+          claude -p --output-format json \
+            --max-turns 3 \
+            "Review this PR for:
+            - Code quality issues
+            - Security vulnerabilities
+            - Performance concerns
+            - Test coverage
+            Output results as JSON" > review.json
 
       - name: Post Review Comment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const report = fs.readFileSync('review-report.md', 'utf8');
+            const review = JSON.parse(fs.readFileSync('review.json', 'utf8'));
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: report
+              body: JSON.stringify(review, null, 2)
             });
 ```
 
-### Task Scripts
+### Print Mode Configuration
 
-**deploy.claude**:
-```
-# Automated deployment script
+Print mode (`claude -p`) supports several flags for automation:
 
-1. Run full test suite
-2. If tests pass, build production bundle
-3. Run security scan
-4. If scan passes, deploy to staging
-5. Run smoke tests on staging
-6. If smoke tests pass, deploy to production
-7. Send notification to team
-```
-
-Run it:
 ```bash
-claude-code --headless --script deploy.claude
-```
+# Limit autonomous turns
+claude -p --max-turns 5 "refactor this module"
 
-### Configuration
+# Structured JSON output
+claude -p --output-format json "analyze this codebase"
 
-```json
-{
-  "headless": {
-    "exitOnError": true,
-    "verbose": true,
-    "timeout": 3600,
-    "logFile": "./claude-headless.log"
-  }
-}
+# With schema validation
+claude -p --json-schema '{"type":"object","properties":{"issues":{"type":"array"}}}' \
+  "find bugs in this code"
+
+# Disable session persistence
+claude -p --no-session-persistence "one-off analysis"
 ```
 
 ---
@@ -637,52 +660,42 @@ Manage multiple Claude Code sessions effectively.
 
 ### Session Management Commands
 
+| Command | Description |
+|---------|-------------|
+| `/resume` | Resume a conversation by ID or name |
+| `/rename` | Name the current session |
+| `/fork` | Fork current session into a new branch |
+| `claude -c` | Continue most recent conversation |
+| `claude -r "session"` | Resume session by name or ID |
+
+### Resuming Sessions
+
+**Continue last conversation**:
 ```bash
-/session list           # Show all sessions
-/session new "Feature"  # Create new session
-/session switch "Bug"   # Switch sessions
-/session save           # Save current state
-/session load "name"    # Load saved session
+claude -c
 ```
 
-### Session Commands Details
-
-**List sessions**:
-```
-User: /session list
-
-Active sessions:
-1. [session-abc] Main development (started 2h ago)
-2. [session-def] Bug investigation (started 30m ago)
-3. [session-ghi] Refactoring (started 5m ago)
+**Resume a named session**:
+```bash
+claude -r "auth-refactor" "finish this PR"
 ```
 
-**Switch sessions**:
+**Rename the current session** (inside the REPL):
 ```
-User: /session switch session-def
-
-Switched to session "Bug investigation"
+/rename auth-refactor
 ```
 
-**Create new session**:
-```
-User: /session new "Feature: User profiles"
+### Forking Sessions
 
-Created new session: session-jkl
-```
+Fork a session to try an alternative approach without losing the original:
 
-**Save session**:
 ```
-User: /session save "Before major refactor"
-
-Session saved as checkpoint
+/fork
 ```
 
-**Load session**:
-```
-User: /session load "Before major refactor"
-
-Loaded session from checkpoint
+Or from the CLI:
+```bash
+claude --resume auth-refactor --fork-session "try OAuth instead"
 ```
 
 ### Session Persistence
@@ -690,27 +703,14 @@ Loaded session from checkpoint
 Sessions are automatically saved and can be resumed:
 
 ```bash
-# Resume last session
-claude-code --resume
+# Continue last conversation
+claude -c
 
-# Resume specific session
-claude-code --session session-abc
+# Resume specific session by name or ID
+claude -r "auth-refactor"
 
-# Start fresh session
-claude-code --new
-```
-
-### Session Configuration
-
-```json
-{
-  "sessions": {
-    "autoSave": true,
-    "autoSaveInterval": 300,
-    "maxSessions": 10,
-    "persistHistory": true
-  }
-}
+# Resume and fork for experimentation
+claude --resume auth-refactor --fork-session "alternative approach"
 ```
 
 ---
@@ -725,9 +725,11 @@ Claude Code supports keyboard shortcuts for efficiency. Here's the complete refe
 |----------|-------------|
 | `Ctrl+C` | Cancel current input/generation |
 | `Ctrl+D` | Exit Claude Code |
+| `Ctrl+G` | Edit plan in external editor |
 | `Ctrl+L` | Clear terminal screen |
-| `Ctrl+O` | Toggle verbose output |
+| `Ctrl+O` | Toggle verbose output (view reasoning) |
 | `Ctrl+R` | Reverse search history |
+| `Ctrl+T` | Toggle task list view |
 | `Ctrl+B` | Background running tasks |
 | `Esc+Esc` | Rewind code/conversation |
 | `Shift+Tab` / `Alt+M` | Toggle permission modes |
@@ -752,17 +754,16 @@ Claude Code supports keyboard shortcuts for efficiency. Here's the complete refe
 Claude Code provides intelligent tab completion:
 
 ```
-User: /che<TAB>
-→ /checkpoint
+User: /rew<TAB>
+→ /rewind
 
-User: /checkpoint <TAB>
-→ /checkpoint list
-→ /checkpoint save
-→ /checkpoint rewind
-→ /checkpoint delete
+User: /plu<TAB>
+→ /plugin
 
-User: /checkpoint save<TAB>
-→ Shows recent checkpoint names
+User: /plugin <TAB>
+→ /plugin install
+→ /plugin enable
+→ /plugin disable
 ```
 
 ### Command History
@@ -847,6 +848,218 @@ Use this for quick command execution without switching contexts.
 
 ---
 
+## Remote Control
+
+Remote Control allows you to control a locally running Claude Code instance from Claude.ai or the Claude app. This is useful when you want to interact with Claude Code through a web interface while it runs against your local codebase.
+
+### Starting Remote Control
+
+```bash
+claude remote-control
+```
+
+This starts a Remote Control session that bridges your local Claude Code environment with the Claude.ai web interface. You can then issue commands from the browser that execute against your local file system and tools.
+
+### Use Cases
+
+- Control Claude Code from a mobile device or tablet
+- Collaborate with team members through a shared web interface
+- Use the richer Claude.ai UI while maintaining local tool execution
+
+---
+
+## Web Sessions
+
+Web Sessions allow you to run Claude Code directly in the browser at claude.ai/code, or create web sessions from the CLI.
+
+### Creating a Web Session
+
+```bash
+# Create a new web session from the CLI
+claude --remote "implement the new API endpoints"
+```
+
+This starts a Claude Code session on claude.ai that you can access from any browser.
+
+### Resuming Web Sessions Locally
+
+If you started a session on the web and want to continue it locally:
+
+```bash
+# Resume a web session in the local terminal
+claude --teleport
+```
+
+Or from within an interactive REPL:
+```
+/teleport
+```
+
+### Use Cases
+
+- Start work on one machine and continue on another
+- Share a session URL with team members
+- Use the web UI for visual diff review, then switch to terminal for execution
+
+---
+
+## Desktop App
+
+The Claude Code Desktop App provides a standalone application for visual diff review and managing multiple sessions. Available for macOS and Windows.
+
+### Handing Off from CLI
+
+If you are in a CLI session and want to switch to the Desktop App:
+
+```
+/desktop
+```
+
+This transfers your current session to the Desktop App for a richer visual experience.
+
+### Features
+
+- Visual diff review for file changes
+- Multiple simultaneous sessions in tabs
+- Rich rendering of code, markdown, and diagrams
+- Available for macOS and Windows
+
+---
+
+## Task List
+
+The Task List feature provides persistent task tracking that survives context compactions (when the conversation history is trimmed to fit the context window).
+
+### Toggling the Task List
+
+Press `Ctrl+T` to toggle the task list view on or off during a session.
+
+### Persistent Tasks
+
+Tasks persist across context compactions, ensuring that long-running work items are not lost when the conversation context is trimmed. This is particularly useful for complex, multi-step implementations.
+
+### Named Task Directories
+
+Use the `CLAUDE_CODE_TASK_LIST_ID` environment variable to create named task directories shared across sessions:
+
+```bash
+export CLAUDE_CODE_TASK_LIST_ID=my-project-sprint-3
+```
+
+This allows multiple sessions to share the same task list, making it useful for team workflows or multi-session projects.
+
+---
+
+## Prompt Suggestions
+
+Prompt Suggestions display grayed-out example commands based on your git history and current conversation context.
+
+### How It Works
+
+- Suggestions appear as grayed-out text below your input prompt
+- Press `Tab` to accept the suggestion
+- Press `Enter` to accept and immediately submit
+- Suggestions are context-aware, drawing from git history and conversation state
+
+### Disabling Prompt Suggestions
+
+```bash
+export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false
+```
+
+---
+
+## Git Worktrees
+
+Git Worktrees allow you to start Claude Code in an isolated worktree, enabling parallel work on different branches without stashing or switching.
+
+### Starting in a Worktree
+
+```bash
+# Start Claude Code in an isolated worktree
+claude --worktree
+# or
+claude -w
+```
+
+### Worktree Location
+
+Worktrees are created at:
+```
+<repo>/.claude/worktrees/<name>
+```
+
+### Auto-Cleanup
+
+If no changes are made in the worktree, it is automatically cleaned up when the session ends.
+
+### Use Cases
+
+- Work on a feature branch while keeping main branch untouched
+- Run tests in isolation without affecting the working directory
+- Try experimental changes in a disposable environment
+
+---
+
+## Sandboxing
+
+Sandboxing provides OS-level filesystem and network isolation for Bash commands executed by Claude Code. This is complementary to permission rules and provides an additional security layer.
+
+### How It Works
+
+- Bash commands run in a sandboxed environment with restricted filesystem access
+- Network access can be isolated to prevent unintended external connections
+- Works alongside permission rules for defense in depth
+
+### Use Cases
+
+- Running untrusted or generated code safely
+- Preventing accidental modifications to files outside the project
+- Restricting network access during automated tasks
+
+---
+
+## Managed Settings (Enterprise)
+
+Managed Settings enable enterprise administrators to deploy Claude Code configuration across an organization using platform-native management tools.
+
+### Deployment Methods
+
+| Platform | Method |
+|----------|--------|
+| macOS | Managed plist files (MDM) |
+| Windows | Windows Registry |
+| Cross-platform | Managed configuration files |
+
+### Available Managed Settings
+
+| Setting | Description |
+|---------|-------------|
+| `disableBypassPermissionsMode` | Prevent users from enabling bypass permissions |
+| `availableModels` | Restrict which models users can select |
+| Custom policies | Organization-specific permission and tool policies |
+
+### Example: macOS Plist
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>disableBypassPermissionsMode</key>
+  <true/>
+  <key>availableModels</key>
+  <array>
+    <string>claude-sonnet-4-6</string>
+    <string>claude-haiku-4-5</string>
+  </array>
+</dict>
+</plist>
+```
+
+---
+
 ## Configuration and Settings
 
 ### Configuration File Locations
@@ -861,24 +1074,21 @@ Use this for quick command execution without switching contexts.
 
 ```json
 {
-  "planning": {
-    "autoEnter": true,
-    "requireApproval": true
-  },
-  "extendedThinking": {
-    "enabled": true,
-    "showThinkingProcess": true
-  },
-  "backgroundTasks": {
-    "enabled": true,
-    "maxConcurrentTasks": 5
-  },
   "permissions": {
-    "mode": "unrestricted"
+    "mode": "default"
   },
-  "headless": {
-    "exitOnError": true,
-    "verbose": true
+  "hooks": {
+    "PreToolUse:Edit": "eslint --fix ${file_path}",
+    "PostToolUse:Write": "~/.claude/hooks/security-scan.sh"
+  },
+  "mcp": {
+    "enabled": true,
+    "servers": {
+      "github": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"]
+      }
+    }
   }
 }
 ```
@@ -887,60 +1097,16 @@ Use this for quick command execution without switching contexts.
 
 ```json
 {
-  "general": {
-    "model": "claude-sonnet-4-5",
-    "temperature": 0.7,
-    "maxTokens": 8000,
-    "theme": "dark"
-  },
-
-  "planning": {
-    "autoEnter": true,
-    "complexityThreshold": 3,
-    "requireApproval": true,
-    "showTimeEstimates": true
-  },
-
-  "extendedThinking": {
-    "enabled": true,
-    "showThinkingProcess": true,
-    "minThinkingTime": 5,
-    "maxThinkingTime": 60
-  },
-
-  "backgroundTasks": {
-    "enabled": true,
-    "maxConcurrentTasks": 5,
-    "notifyOnCompletion": true,
-    "autoCleanup": true,
-    "logOutput": true
-  },
-
   "permissions": {
-    "mode": "unrestricted",
-    "requireConfirmationFor": ["Bash:rm", "Git:push --force"],
-    "blockedCommands": ["dd", "mkfs", "format"]
-  },
-
-  "sessions": {
-    "autoSave": true,
-    "autoSaveInterval": 300,
-    "maxSessions": 10,
-    "persistHistory": true
-  },
-
-  "checkpoints": {
-    "autoCheckpoint": true,
-    "autoCheckpointInterval": 30,
-    "maxCheckpoints": 20,
-    "compressionEnabled": true
+    "mode": "default",
+    "allowedTools": ["Bash(git log:*)", "Read"],
+    "disallowedTools": ["Bash(rm -rf:*)"]
   },
 
   "hooks": {
-    "PreToolUse:Edit": "eslint --fix ${file_path}",
-    "PostToolUse:Write": "~/.claude/hooks/security-scan.sh",
-    "PreCommit": "npm test",
-    "UserPromptSubmit": "~/.claude/hooks/validate.sh"
+    "PreToolUse": [{ "matcher": "Edit", "hooks": ["eslint --fix ${file_path}"] }],
+    "PostToolUse": [{ "matcher": "Write", "hooks": ["~/.claude/hooks/security-scan.sh"] }],
+    "Stop": [{ "hooks": ["~/.claude/hooks/notify.sh"] }]
   },
 
   "mcp": {
@@ -954,28 +1120,6 @@ Use this for quick command execution without switching contexts.
         }
       }
     }
-  },
-
-  "ui": {
-    "colorEnabled": true,
-    "emojiEnabled": true,
-    "showProgress": true,
-    "compactMode": false,
-    "lineNumbers": true
-  },
-
-  "performance": {
-    "cacheEnabled": true,
-    "cacheTTL": 3600,
-    "parallelTasks": true,
-    "maxParallelTasks": 3
-  },
-
-  "logging": {
-    "level": "info",
-    "file": "~/.claude/logs/claude-code.log",
-    "maxSize": "10MB",
-    "maxFiles": 5
   }
 }
 ```
@@ -986,40 +1130,47 @@ Override config with environment variables:
 
 ```bash
 # Model selection
-export CLAUDE_MODEL=claude-opus-4
+export ANTHROPIC_MODEL=claude-opus-4-6
+export ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6
+export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-haiku-4-5
 
 # API configuration
 export ANTHROPIC_API_KEY=sk-ant-...
 
+# Thinking configuration
+export MAX_THINKING_TOKENS=16000
+export CLAUDE_CODE_EFFORT_LEVEL=high
+
 # Feature toggles
-export CLAUDE_PLANNING_MODE=true
-export CLAUDE_EXTENDED_THINKING=true
+export CLAUDE_CODE_DISABLE_AUTO_MEMORY=true
+export CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=true
+export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false
+export CLAUDE_CODE_ENABLE_TASKS=true
 
-# Permissions
-export CLAUDE_PERMISSION_MODE=confirm
+# MCP configuration
+export MAX_MCP_OUTPUT_TOKENS=50000
+export ENABLE_TOOL_SEARCH=true
 
-# Logging
-export CLAUDE_LOG_LEVEL=debug
+# Task management
+export CLAUDE_CODE_TASK_LIST_ID=my-project-tasks
+
+# Agent teams (experimental)
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=true
 ```
 
 ### Configuration Management Commands
 
 ```
-User: /config show
-[Shows current configuration]
-
-User: /config set planning.autoEnter false
-[Updates configuration]
-
-User: /config reset
-[Resets to defaults]
-
-User: /config export ~/my-claude-config.json
-[Exports configuration]
-
-User: /config import ~/my-claude-config.json
-[Imports configuration]
+User: /config
+[Opens interactive configuration menu]
 ```
+
+The `/config` command provides an interactive menu to toggle settings such as:
+- Extended thinking on/off
+- Verbose output
+- Permission mode
+- Model selection
 
 ### Per-Project Configuration
 
@@ -1028,10 +1179,10 @@ Create `.claude/config.json` in your project:
 ```json
 {
   "hooks": {
-    "PreCommit": "npm test && npm run lint"
+    "PreToolUse": [{ "matcher": "Bash", "hooks": ["npm test && npm run lint"] }]
   },
   "permissions": {
-    "mode": "confirm"
+    "mode": "default"
   },
   "mcp": {
     "servers": {
@@ -1069,10 +1220,10 @@ Create `.claude/config.json` in your project:
 - ❌ Don't start too many concurrent tasks
 
 ### Permissions
-- ✅ Use read-only for code review
-- ✅ Use confirm for learning
-- ✅ Use unrestricted for automation
-- ❌ Don't stay in restrictive modes unnecessarily
+- ✅ Use `plan` for code review (read-only)
+- ✅ Use `default` for interactive development
+- ✅ Use `acceptEdits` for automation workflows
+- ❌ Don't use `bypassPermissions` unless absolutely necessary
 
 ### Sessions
 - ✅ Use separate sessions for different tasks

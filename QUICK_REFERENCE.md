@@ -16,22 +16,31 @@ cp 01-slash-commands/*.md .claude/commands/
 cp 01-slash-commands/optimize.md .claude/commands/
 ```
 
-### Subagents
-```bash
-# Install all
-cp 02-subagents/*.md .claude/agents/
-
-# Install specific
-cp 02-subagents/code-reviewer.md .claude/agents/
-```
-
 ### Memory
 ```bash
 # Project memory
-cp 03-memory/project-CLAUDE.md ./CLAUDE.md
+cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 
 # Personal memory
-cp 03-memory/personal-CLAUDE.md ~/.claude/CLAUDE.md
+cp 02-memory/personal-CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+### Skills
+```bash
+# Personal skills
+cp -r 03-skills/code-review ~/.claude/skills/
+
+# Project skills
+cp -r 03-skills/code-review .claude/skills/
+```
+
+### Subagents
+```bash
+# Install all
+cp 04-subagents/*.md .claude/agents/
+
+# Install specific
+cp 04-subagents/code-reviewer.md .claude/agents/
 ```
 
 ### MCP
@@ -40,17 +49,20 @@ cp 03-memory/personal-CLAUDE.md ~/.claude/CLAUDE.md
 export GITHUB_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
-# Install config
-cp 04-mcp/github-mcp.json ~/.claude/mcp.json
+# Install config (project scope)
+cp 05-mcp/github-mcp.json .mcp.json
+
+# Or user scope: add to ~/.claude.json
 ```
 
-### Skills
+### Hooks
 ```bash
-# Personal skills
-cp -r 05-skills/code-review ~/.claude/skills/
+# Install hooks
+mkdir -p ~/.claude/hooks
+cp 06-hooks/*.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/*.sh
 
-# Project skills
-cp -r 05-skills/code-review .claude/skills/
+# Configure in settings (~/.claude/settings.json)
 ```
 
 ### Plugins
@@ -61,24 +73,14 @@ cp -r 05-skills/code-review .claude/skills/
 /plugin install documentation
 ```
 
-### Hooks
-```bash
-# Install hooks
-mkdir -p ~/.claude/hooks
-cp 07-hooks/*.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/*.sh
-
-# Configure in settings (.claude/settings.json)
-```
-
 ### Checkpoints
 ```bash
-# Checkpoints are auto-enabled
-# Use commands:
-/checkpoint save "description"
-/checkpoint list
-/checkpoint rewind "checkpoint-name"
-/checkpoint diff checkpoint-1 checkpoint-2
+# Checkpoints are created automatically with every user prompt
+# To rewind, press Esc twice or use:
+/rewind
+
+# Then choose: Restore code and conversation, Restore conversation,
+# Restore code, Summarize from here, or Never mind
 ```
 
 ### Advanced Features
@@ -89,20 +91,19 @@ chmod +x ~/.claude/hooks/*.sh
 # Planning mode
 /plan Task description
 
-# Permission modes
-/permission readonly
-/permission confirm
-/permission unrestricted
+# Permission modes (use --permission-mode flag)
+# default        - Ask for approval on risky actions
+# acceptEdits    - Auto-accept file edits, ask for others
+# plan           - Read-only analysis, no modifications
+# dontAsk        - Accept all actions except risky ones
+# bypassPermissions - Accept all actions (requires --dangerously-skip-permissions)
 
 # Session management
-/session list
-/session new "name"
-/session switch "name"
-
-# Background tasks
-Run command in background
-/task list
-/task status task-id
+/resume                # Resume a previous conversation
+/rename "name"         # Name the current session
+/fork                  # Fork the current session
+claude -c              # Continue most recent conversation
+claude -r "session"    # Resume session by name/ID
 ```
 
 ---
@@ -112,17 +113,22 @@ Run command in background
 | Feature | Install Path | Usage |
 |---------|-------------|-------|
 | **Slash Commands** | `.claude/commands/*.md` | `/command-name` |
-| **Subagents** | `.claude/agents/*.md` | Auto-delegated |
 | **Memory** | `./CLAUDE.md` | Auto-loaded |
-| **MCP** | `.claude/mcp.json` | `/mcp__server__action` |
 | **Skills** | `.claude/skills/*/SKILL.md` | Auto-invoked |
-| **Plugins** | Via `/plugin install` | Bundles all |
+| **Subagents** | `.claude/agents/*.md` | Auto-delegated |
+| **MCP** | `.mcp.json` (project) or `~/.claude.json` (user) | `/mcp__server__action` |
 | **Hooks** | `~/.claude/hooks/*.sh` | Event-triggered |
-| **Checkpoints** | Built-in | `/checkpoint <command>` |
+| **Plugins** | Via `/plugin install` | Bundles all |
+| **Checkpoints** | Built-in | `Esc+Esc` or `/rewind` |
 | **Planning Mode** | Built-in | `/plan <task>` |
-| **Permission Modes** | Built-in | `/permission <mode>` |
+| **Permission Modes** | Built-in | `--allowedTools`, `--permission-mode` |
 | **Sessions** | Built-in | `/session <command>` |
 | **Background Tasks** | Built-in | Run in background |
+| **Remote Control** | Built-in | WebSocket API |
+| **Web Sessions** | Built-in | `claude web` |
+| **Git Worktrees** | Built-in | `/worktree` |
+| **Auto Memory** | Built-in | Auto-saves to CLAUDE.md |
+| **Task List** | Built-in | `/task list` |
 
 ---
 
@@ -135,11 +141,11 @@ cp 01-slash-commands/optimize.md .claude/commands/
 # Use: /optimize
 
 # Method 2: Subagent
-cp 02-subagents/code-reviewer.md .claude/agents/
+cp 04-subagents/code-reviewer.md .claude/agents/
 # Use: Auto-delegated
 
 # Method 3: Skill
-cp -r 05-skills/code-review ~/.claude/skills/
+cp -r 03-skills/code-review ~/.claude/skills/
 # Use: Auto-invoked
 
 # Method 4: Plugin (best)
@@ -153,10 +159,10 @@ cp -r 05-skills/code-review ~/.claude/skills/
 cp 01-slash-commands/generate-api-docs.md .claude/commands/
 
 # Subagent
-cp 02-subagents/documentation-writer.md .claude/agents/
+cp 04-subagents/documentation-writer.md .claude/agents/
 
 # Skill
-cp -r 05-skills/doc-generator ~/.claude/skills/
+cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # Plugin (complete solution)
 /plugin install documentation
@@ -173,7 +179,7 @@ cp -r 05-skills/doc-generator ~/.claude/skills/
 ### Team Standards
 ```bash
 # Project memory
-cp 03-memory/project-CLAUDE.md ./CLAUDE.md
+cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 
 # Edit for your team
 vim CLAUDE.md
@@ -183,7 +189,7 @@ vim CLAUDE.md
 ```bash
 # Install hooks
 mkdir -p ~/.claude/hooks
-cp 07-hooks/*.sh ~/.claude/hooks/
+cp 06-hooks/*.sh ~/.claude/hooks/
 chmod +x ~/.claude/hooks/*.sh
 
 # Examples:
@@ -194,13 +200,10 @@ chmod +x ~/.claude/hooks/*.sh
 
 ### Safe Refactoring
 ```bash
-# Use checkpoints for safe experimentation
-/checkpoint save "Before refactoring"
-
+# Checkpoints are created automatically before each prompt
 # Try refactoring
 # If it works: continue
-# If it fails:
-/checkpoint rewind "Before refactoring"
+# If it fails: press Esc+Esc or use /rewind to go back
 ```
 
 ### Complex Implementation
@@ -215,8 +218,11 @@ chmod +x ~/.claude/hooks/*.sh
 
 ### CI/CD Integration
 ```bash
-# Run in headless mode
-claude-code --headless --task "Run all tests and generate report"
+# Run in headless mode (non-interactive)
+claude -p "Run all tests and generate report"
+
+# With permission mode for CI
+claude -p "Run tests" --permission-mode dontAsk
 
 # With hooks for automation
 # See 09-advanced-features/README.md
@@ -224,14 +230,11 @@ claude-code --headless --task "Run all tests and generate report"
 
 ### Learning & Experimentation
 ```bash
-# Use permission mode
-/permission confirm
+# Use plan mode for safe analysis
+claude --permission-mode plan
 
-# Use checkpoints
-/checkpoint save "Before experiment"
-
-# Experiment safely
-# Rewind if needed
+# Experiment safely - checkpoints are created automatically
+# If you need to rewind: press Esc+Esc or use /rewind
 ```
 
 ---
@@ -244,22 +247,22 @@ Your Project/
 │   ├── commands/        # Slash commands go here
 │   ├── agents/          # Subagents go here
 │   ├── skills/          # Project skills go here
-│   ├── mcp.json         # MCP configuration
-│   └── settings.json    # Project settings (hooks, checkpoints, etc.)
+│   └── settings.json    # Project settings (hooks, etc.)
+├── .mcp.json            # MCP configuration (project scope)
 ├── CLAUDE.md            # Project memory
 └── src/
     └── api/
         └── CLAUDE.md    # Directory-specific memory
 
 User Home/
-└── .claude/
-    ├── commands/        # Personal commands
-    ├── agents/          # Personal agents
-    ├── skills/          # Personal skills
-    ├── hooks/           # Hook scripts
-    ├── mcp.json         # Personal MCP config
-    ├── settings.json    # User settings
-    └── CLAUDE.md        # Personal memory
+├── .claude/
+│   ├── commands/        # Personal commands
+│   ├── agents/          # Personal agents
+│   ├── skills/          # Personal skills
+│   ├── hooks/           # Hook scripts
+│   ├── settings.json    # User settings
+│   └── CLAUDE.md        # Personal memory
+└── .claude.json         # Personal MCP config (user scope)
 ```
 
 ---
@@ -268,23 +271,27 @@ User Home/
 
 ### By Category
 - **Slash Commands**: `01-slash-commands/`
-- **Subagents**: `02-subagents/`
-- **Memory**: `03-memory/`
-- **MCP**: `04-mcp/`
-- **Skills**: `05-skills/`
-- **Plugins**: `06-plugins/`
+- **Memory**: `02-memory/`
+- **Skills**: `03-skills/`
+- **Subagents**: `04-subagents/`
+- **MCP**: `05-mcp/`
+- **Hooks**: `06-hooks/`
+- **Plugins**: `07-plugins/`
+- **Checkpoints**: `08-checkpoints/`
+- **Advanced Features**: `09-advanced-features/`
+- **CLI**: `10-cli/`
 
 ### By Use Case
 - **Performance**: `01-slash-commands/optimize.md`
-- **Security**: `02-subagents/secure-reviewer.md`
-- **Testing**: `02-subagents/test-engineer.md`
-- **Docs**: `05-skills/doc-generator/`
-- **DevOps**: `06-plugins/devops-automation/`
+- **Security**: `04-subagents/secure-reviewer.md`
+- **Testing**: `04-subagents/test-engineer.md`
+- **Docs**: `03-skills/doc-generator/`
+- **DevOps**: `07-plugins/devops-automation/`
 
 ### By Complexity
 - **Simple**: Slash commands
 - **Medium**: Subagents, Memory
-- **Advanced**: Skills
+- **Advanced**: Skills, Hooks
 - **Complete**: Plugins
 
 ---
@@ -306,18 +313,18 @@ cp 01-slash-commands/optimize.md .claude/commands/
 ### Day 2-3
 ```bash
 # Set up memory
-cp 03-memory/project-CLAUDE.md ./CLAUDE.md
+cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 vim CLAUDE.md
 
 # Install subagent
-cp 02-subagents/code-reviewer.md .claude/agents/
+cp 04-subagents/code-reviewer.md .claude/agents/
 ```
 
 ### Day 4-5
 ```bash
 # Set up MCP
 export GITHUB_TOKEN="your_token"
-cp 04-mcp/github-mcp.json .claude/mcp.json
+cp 05-mcp/github-mcp.json .mcp.json
 
 # Try MCP commands
 /mcp__github__list_prs
@@ -326,7 +333,7 @@ cp 04-mcp/github-mcp.json .claude/mcp.json
 ### Week 2
 ```bash
 # Install skill
-cp -r 05-skills/code-review ~/.claude/skills/
+cp -r 03-skills/code-review ~/.claude/skills/
 
 # Let it auto-invoke
 # Just say: "Review this code for issues"
@@ -345,7 +352,21 @@ cp -r 05-skills/code-review ~/.claude/skills/
 
 ---
 
-## 💡 Tips & Tricks
+## New Features (February 2026)
+
+| Feature | Description | Usage |
+|---------|-------------|-------|
+| **Remote Control** | Control Claude Code via WebSocket API | `claude --remote` for external integrations |
+| **Web Sessions** | Browser-based Claude Code interface | `claude web` to launch |
+| **Desktop App** | Native desktop application | Download from claude.ai/download |
+| **Task List** | Manage background tasks | `/task list`, `/task status <id>` |
+| **Auto Memory** | Automatic memory saving from conversations | Claude auto-saves key context to CLAUDE.md |
+| **Git Worktrees** | Isolated workspaces for parallel development | `/worktree` to create isolated workspace |
+| **Model Selection** | Switch between Sonnet 4.6 and Opus 4.6 | `/model` or `--model` flag |
+
+---
+
+## Tips & Tricks
 
 ### Customization
 - Start with examples as-is
@@ -379,11 +400,14 @@ echo $GITHUB_TOKEN
 | Need | Use This | Example |
 |------|----------|---------|
 | Quick shortcut | Slash Command | `01-slash-commands/optimize.md` |
-| Specialized task | Subagent | `02-subagents/code-reviewer.md` |
-| Team standards | Memory | `03-memory/project-CLAUDE.md` |
-| External data | MCP | `04-mcp/github-mcp.json` |
-| Auto workflow | Skill | `05-skills/code-review/` |
-| Complete solution | Plugin | `06-plugins/pr-review/` |
+| Team standards | Memory | `02-memory/project-CLAUDE.md` |
+| Auto workflow | Skill | `03-skills/code-review/` |
+| Specialized task | Subagent | `04-subagents/code-reviewer.md` |
+| External data | MCP | `05-mcp/github-mcp.json` |
+| Event automation | Hook | `06-hooks/pre-commit.sh` |
+| Complete solution | Plugin | `07-plugins/pr-review/` |
+| Safe experiment | Checkpoint | `08-checkpoints/checkpoint-examples.md` |
+| CI/CD pipeline | CLI | `10-cli/README.md` |
 
 ---
 

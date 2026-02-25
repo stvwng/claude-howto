@@ -90,22 +90,23 @@ Plugin manifest uses JSON format in `.claude-plugin/plugin.json`:
 ```
 my-plugin/
 ├── .claude-plugin/
-│   └── plugin.json       # NOT plugin.yaml
-├── commands/             # Outside .claude-plugin
+│   └── plugin.json       # Manifest (name, description, version, author)
+├── commands/             # Skills as Markdown files
 │   ├── task-1.md
 │   ├── task-2.md
 │   └── workflows/
-├── agents/
+├── agents/               # Custom agent definitions
 │   ├── specialist-1.md
 │   ├── specialist-2.md
 │   └── configs/
-├── skills/
+├── skills/               # Agent Skills with SKILL.md files
 │   ├── skill-1.md
 │   └── skill-2.md
-├── hooks/
+├── hooks/                # Event handlers in hooks.json
 │   └── hooks.json
-├── .mcp.json
-├── .lsp.json             # NEW: LSP server config
+├── .mcp.json             # MCP server configurations
+├── .lsp.json             # LSP server configurations
+├── settings.json         # Default settings
 ├── templates/
 │   └── issue-template.md
 ├── scripts/
@@ -133,6 +134,18 @@ Plugins can include Language Server Protocol (LSP) support via `.lsp.json`:
   }
 }
 ```
+
+## Plugin Settings
+
+Plugins can ship a `settings.json` file to provide default configuration. This currently supports the `agent` key, which sets the main thread agent for the plugin:
+
+```json
+{
+  "agent": "agents/specialist-1.md"
+}
+```
+
+When a plugin includes `settings.json`, its defaults are applied on installation. Users can override these settings in their own project or user configuration.
 
 ## Standalone vs Plugin Approach
 
@@ -267,12 +280,14 @@ documentation/
 
 ## Plugin Marketplace
 
+The official Anthropic-managed plugin directory is `anthropics/claude-plugins-official`. Enterprise admins can also create private plugin marketplaces for internal distribution.
+
 ```mermaid
 graph TB
     A["Plugin Marketplace"]
-    B["Official<br/>Anthropic"]
+    B["Official<br/>anthropics/claude-plugins-official"]
     C["Community<br/>Marketplace"]
-    D["Enterprise<br/>Registry"]
+    D["Enterprise<br/>Private Registry"]
 
     A --> B
     A --> C
@@ -289,7 +304,28 @@ graph TB
     D -->|Internal| D1["Company Standards"]
     D -->|Internal| D2["Legacy Systems"]
     D -->|Internal| D3["Compliance"]
+
+    style A fill:#e1f5fe,stroke:#333,color:#333
+    style B fill:#e8f5e9,stroke:#333,color:#333
+    style C fill:#f3e5f5,stroke:#333,color:#333
+    style D fill:#fff3e0,stroke:#333,color:#333
 ```
+
+### Marketplace Configuration
+
+Enterprise and advanced users can control marketplace behavior through settings:
+
+| Setting | Description |
+|---------|-------------|
+| `extraKnownMarketplaces` | Add additional marketplace sources beyond the defaults |
+| `blockedMarketplaces` | Admin-managed setting to restrict specific marketplaces |
+| `strictKnownMarketplaces` | Control which marketplaces users are allowed to add |
+
+### Additional Marketplace Features
+
+- **Default git timeout**: Increased from 30s to 120s for large plugin repositories
+- **Custom npm registries**: Plugins can specify custom npm registry URLs for dependency resolution
+- **Version pinning**: Lock plugins to specific versions for reproducible environments
 
 ## Plugin Installation & Lifecycle
 
@@ -324,14 +360,22 @@ graph LR
 
 ## Installation Methods
 
-### Official Plugin
+### From Marketplace
 ```bash
 /plugin install plugin-name
 ```
 
+### Enable / Disable (with auto-detected scope)
+```bash
+/plugin enable plugin-name
+/plugin disable plugin-name
+```
+
 ### Local Plugin (for development)
 ```bash
-/plugin install ./path/to/plugin
+# CLI flag for local testing (repeatable for multiple plugins)
+claude --plugin-dir ./path/to/plugin
+claude --plugin-dir ./plugin-a --plugin-dir ./plugin-b
 ```
 
 ### From Git Repository
@@ -369,10 +413,11 @@ graph TD
 
 ## Testing a Plugin
 
-Before publishing, test your plugin locally using the CLI flag:
+Before publishing, test your plugin locally using the `--plugin-dir` CLI flag (repeatable for multiple plugins):
 
 ```bash
 claude --plugin-dir ./my-plugin
+claude --plugin-dir ./my-plugin --plugin-dir ./another-plugin
 ```
 
 This launches Claude Code with your plugin loaded, allowing you to:
@@ -380,6 +425,7 @@ This launches Claude Code with your plugin loaded, allowing you to:
 - Test subagents and agents function correctly
 - Confirm MCP servers connect properly
 - Validate hook execution
+- Check LSP server configurations
 - Check for any configuration errors
 
 ## Publishing a Plugin
@@ -573,12 +619,12 @@ The following Claude Code features work together with plugins:
 
 ### Plugin Won't Install
 - Check Claude Code version compatibility: `/version`
-- Verify `plugin.yaml` syntax with `yaml` validator
+- Verify `plugin.json` syntax with a JSON validator
 - Check internet connection (for remote plugins)
 - Review permissions: `ls -la plugin/`
 
 ### Components Not Loading
-- Verify paths in `plugin.yaml` match actual directory structure
+- Verify paths in `plugin.json` match actual directory structure
 - Check file permissions: `chmod +x scripts/`
 - Review component file syntax
 - Check logs: `/plugin debug plugin-name`

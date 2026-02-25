@@ -1,6 +1,8 @@
 #!/bin/bash
 # Run tests before commit
-# Hook: PreCommit
+# Hook: PreToolUse (matcher: Bash) - checks if the command is a git commit
+# Note: There is no "PreCommit" hook event. Use PreToolUse with a Bash matcher
+# and inspect the command to detect git commit operations.
 
 echo "🧪 Running tests before commit..."
 

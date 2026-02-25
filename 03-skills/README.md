@@ -21,7 +21,7 @@ Agent Skills are reusable, filesystem-based capabilities that extend Claude's fu
 
 Skills follow the [Agent Skills](https://agentskills.io) open standard, which works across multiple AI tools. Claude Code extends the standard with additional features like invocation control, subagent execution, and dynamic context injection.
 
-> **Note**: Custom slash commands have been merged into skills. A file at `.claude/commands/review.md` and a skill at `.claude/skills/review/SKILL.md` both create `/review` and work the same way. Your existing `.claude/commands/` files keep working.
+> **Note**: Custom slash commands have been merged into skills. `.claude/commands/` files still work and support the same frontmatter fields. Skills are recommended for new development. When both exist at the same path (e.g., `.claude/commands/review.md` and `.claude/skills/review/SKILL.md`), the skill takes precedence.
 
 ## How Skills Work: Progressive Disclosure
 
@@ -196,13 +196,13 @@ Deploy the application:
 
 ## Controlling Skill Invocation
 
-By default, both you and Claude can invoke any skill. Two frontmatter fields control this:
+By default, both you and Claude can invoke any skill. Two frontmatter fields control the three invocation modes:
 
-| Frontmatter | You can invoke | Claude can invoke | When loaded |
-|-------------|---------------|-------------------|-------------|
-| (default) | Yes | Yes | Description always in context |
-| `disable-model-invocation: true` | Yes | No | Description not in context |
-| `user-invocable: false` | No | Yes | Description always in context |
+| Frontmatter | You can invoke | Claude can invoke |
+|---|---|---|
+| (default) | Yes | Yes |
+| `disable-model-invocation: true` | Yes | No |
+| `user-invocable: false` | No | Yes |
 
 **Use `disable-model-invocation: true`** for workflows with side effects: `/commit`, `/deploy`, `/send-slack-message`. You don't want Claude deciding to deploy because your code looks ready.
 
@@ -260,7 +260,27 @@ Commands execute immediately; Claude only sees the final output.
 
 ## Running Skills in Subagents
 
-Add `context: fork` to run a skill in isolation:
+Add `context: fork` to run a skill in an isolated subagent context. The skill content becomes the task for a dedicated subagent with its own context window, keeping the main conversation uncluttered.
+
+The `agent` field specifies which agent type to use:
+
+| Agent Type | Best For |
+|---|---|
+| `Explore` | Read-only research, codebase analysis |
+| `Plan` | Creating implementation plans |
+| `general-purpose` | Broad tasks requiring all tools |
+| Custom agents | Specialized agents defined in your configuration |
+
+**Example frontmatter:**
+
+```yaml
+---
+context: fork
+agent: Explore
+---
+```
+
+**Full skill example:**
 
 ```yaml
 ---
@@ -275,8 +295,6 @@ Research $ARGUMENTS thoroughly:
 2. Read and analyze the code
 3. Summarize findings with specific file references
 ```
-
-The skill content becomes the task for a dedicated subagent with its own context. The `agent` field specifies which agent type to use (`Explore`, `Plan`, `general-purpose`, or custom agents).
 
 ## Practical Examples
 
@@ -513,6 +531,29 @@ For code smell catalog, see [references/code-smells.md](references/code-smells.m
 For refactoring techniques, see [references/refactoring-catalog.md](references/refactoring-catalog.md).
 ```
 
+## Supporting Files
+
+Skills can include multiple files in their directory beyond `SKILL.md`. These supporting files (templates, examples, scripts, reference documents) let you keep the main skill file focused while providing Claude with additional resources it can load as needed.
+
+```
+my-skill/
+├── SKILL.md              # Main instructions (required, keep under 500 lines)
+├── templates/            # Templates for Claude to fill in
+│   └── output-format.md
+├── examples/             # Example outputs showing expected format
+│   └── sample-output.md
+├── references/           # Domain knowledge and specifications
+│   └── api-spec.md
+└── scripts/              # Scripts Claude can execute
+    └── validate.sh
+```
+
+Guidelines for supporting files:
+
+- Keep `SKILL.md` under **500 lines**. Move detailed reference material, large examples, and specifications to separate files.
+- Reference additional files from `SKILL.md` using **relative paths** (e.g., `[API reference](references/api-spec.md)`).
+- Supporting files are loaded at Level 3 (as needed), so they do not consume context until Claude actually reads them.
+
 ## Managing Skills
 
 ### Viewing Available Skills
@@ -660,7 +701,7 @@ If Claude uses your skill when you don't want it:
 
 ### Claude Doesn't See All Skills
 
-Skill descriptions have a character budget (default 15,000 characters). Run `/context` to check for warnings about excluded skills. Set `SLASH_COMMAND_TOOL_CHAR_BUDGET` environment variable to increase the limit.
+Skill descriptions are loaded at **2% of the context window** (fallback: **16,000 characters**). Run `/context` to check for warnings about excluded skills. Override the budget with the `SLASH_COMMAND_TOOL_CHAR_BUDGET` environment variable.
 
 ## Security Considerations
 

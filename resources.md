@@ -5,6 +5,19 @@
 
 # List of good resources
 
+## Official Documentation
+
+| Resource | Description | Link |
+|----------|-------------|------|
+| Claude Code Docs | Official Claude Code documentation | [docs.anthropic.com/en/docs/claude-code](https://docs.anthropic.com/en/docs/claude-code) |
+| Anthropic Docs | Full Anthropic documentation | [docs.anthropic.com](https://docs.anthropic.com) |
+| MCP Protocol | Model Context Protocol specification | [modelcontextprotocol.io](https://modelcontextprotocol.io) |
+| MCP Servers | Official MCP server implementations | [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
+| Anthropic Cookbook | Code examples and tutorials | [github.com/anthropics/anthropic-cookbook](https://github.com/anthropics/anthropic-cookbook) |
+| Claude Code Skills | Community skills repository | [github.com/anthropics/claude-code-skills](https://github.com/anthropics/claude-code-skills) |
+
+---
+
 ## Mastering Claude Code in 30 Minutes
 
 _Video_: https://www.youtube.com/watch?v=6eBSHbLKuN0
@@ -197,3 +210,20 @@ graph TD
 - Regularly clean up sessions, prune context, and remove completed worktrees to avoid clutter.
 
 These steps capture the core recommendations for smooth workflows with Claude Code in both new and existing codebases.
+
+---
+
+## New Features & Capabilities (February 2026)
+
+### Key Feature Resources
+
+| Feature | Description | Learn More |
+|---------|-------------|------------|
+| **Auto Memory** | Claude automatically learns and remembers your preferences across sessions | [Memory Guide](02-memory/) |
+| **Remote Control** | Programmatically control Claude Code sessions from external tools and scripts | [Advanced Features](09-advanced-features/) |
+| **Web Sessions** | Access Claude Code through browser-based interfaces for remote development | [CLI Reference](10-cli/) |
+| **Desktop App** | Native desktop application for Claude Code with enhanced UI | [Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code) |
+| **Extended Thinking** | Deep reasoning toggle via `Alt+T`/`Option+T` or `MAX_THINKING_TOKENS` env var | [Advanced Features](09-advanced-features/) |
+| **Permission Modes** | Fine-grained control: default, acceptEdits, plan, dontAsk, bypassPermissions | [Advanced Features](09-advanced-features/) |
+| **7-Tier Memory** | Managed Policy, Project, Project Rules, User, User Rules, Local, Auto Memory | [Memory Guide](02-memory/) |
+| **Hook Events** | PreToolUse, PostToolUse, Stop, SubagentStop, SubagentStart, Notification, and more | [Hooks Guide](06-hooks/) |

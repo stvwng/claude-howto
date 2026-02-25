@@ -309,15 +309,13 @@ cp 04-subagents/*.md /path/to/project/.claude/agents/
 export GITHUB_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
-# Copy configuration
-cp 05-mcp/github-mcp.json ~/.claude/mcp.json
+# Add MCP server via CLI
+claude mcp add github -- npx -y @modelcontextprotocol/server-github
+
+# Or add to project .mcp.json manually (see 05-mcp/ for examples)
 ```
 
-**Usage**:
-```
-/mcp__github__list_prs
-/mcp__github__get_pr 456
-```
+**Usage**: MCP tools are automatically available to Claude once configured
 
 ---
 
@@ -340,23 +338,30 @@ cp 05-mcp/github-mcp.json ~/.claude/mcp.json
 mkdir -p ~/.claude/hooks
 cp 06-hooks/*.sh ~/.claude/hooks/
 chmod +x ~/.claude/hooks/*.sh
+```
 
-# Configure in settings
-echo '{
+Configure hooks in `~/.claude/settings.json`:
+```json
+{
   "hooks": {
-    "PreToolUse:Write": "~/.claude/hooks/format-code.sh ${file_path}",
-    "PostToolUse:Write": "~/.claude/hooks/security-scan.sh ${file_path}",
-    "PreCommit": "~/.claude/hooks/pre-commit.sh"
+    "PreToolUse": [{
+      "matcher": "Write",
+      "hooks": ["~/.claude/hooks/format-code.sh"]
+    }],
+    "PostToolUse": [{
+      "matcher": "Write",
+      "hooks": ["~/.claude/hooks/security-scan.sh"]
+    }]
   }
-}' > ~/.claude/hooks-config.json
+}
 ```
 
 **Usage**: Hooks execute automatically on events
 
 **Hook Types**:
 - **Tool Hooks**: `PreToolUse:*`, `PostToolUse:*`
-- **Session Hooks**: `UserPromptSubmit`, `SessionStart`, `SessionEnd`
-- **Git Hooks**: `PreCommit`, `PostCommit`, `PrePush`
+- **Session Hooks**: `Stop`, `SubagentStop`, `SubagentStart`
+- **Lifecycle Hooks**: `Notification`, `ConfigChange`, `WorktreeCreate`, `WorktreeRemove`
 
 ---
 
@@ -395,17 +400,16 @@ echo '{
 
 **Usage**:
 ```
-# Create checkpoint
-/checkpoint save "Before refactoring"
+# Checkpoints are created automatically with every user prompt
+# To rewind, press Esc twice or use:
+/rewind
 
-# List checkpoints
-/checkpoint list
-
-# Rewind to checkpoint
-/checkpoint rewind "Before refactoring"
-
-# Compare checkpoints
-/checkpoint diff checkpoint-1 checkpoint-2
+# Then choose from five options:
+# 1. Restore code and conversation
+# 2. Restore conversation
+# 3. Restore code
+# 4. Summarize from here
+# 5. Never mind
 ```
 
 **Use Cases**:
@@ -417,10 +421,10 @@ echo '{
 
 **Example Workflow**:
 ```
-1. /checkpoint save "Working state"
+1. Work normally (checkpoints are created automatically)
 2. Try experimental approach
 3. If it works: Continue
-4. If it fails: /checkpoint rewind "Working state"
+4. If it fails: Press Esc+Esc or /rewind to go back
 ```
 
 ---
@@ -446,11 +450,16 @@ User: Approve and proceed
 
 ### Extended Thinking
 
-Deep reasoning for complex problems:
-```
-User: /think Should we use microservices or monolith?
+Deep reasoning for complex problems. Toggle with `Alt+T` / `Option+T`, or set `MAX_THINKING_TOKENS` environment variable:
+```bash
+# Toggle in-session: press Alt+T (Option+T on macOS)
 
-Claude: [Analyzes trade-offs systematically]
+# Or set via environment variable
+MAX_THINKING_TOKENS=10000 claude
+
+# Then ask complex questions
+User: Should we use microservices or monolith?
+Claude: [Analyzes trade-offs systematically with extended reasoning]
 ```
 
 **Benefits**: Better architectural decisions, thorough analysis
@@ -471,22 +480,23 @@ Claude: Started bg-1234, you can continue working
 ### Permission Modes
 
 Control what Claude can do:
-- **Unrestricted**: Full access (default)
-- **Confirm**: Ask before actions
-- **Read-only**: Analysis only, no modifications
-- **Custom**: Granular permissions
+- **`default`**: Standard permissions with confirmation prompts
+- **`acceptEdits`**: Auto-accept file edits, confirm other actions
+- **`plan`**: Analysis and planning only, no modifications
+- **`dontAsk`**: Accept all actions without confirmation
+- **`bypassPermissions`**: Skip all permission checks (dangerous)
 
-```
-/permission readonly    # Code review mode
-/permission confirm     # Learning mode
-/permission unrestricted # Full automation
+```bash
+claude --permission-mode plan          # Code review mode
+claude --permission-mode acceptEdits   # Learning mode
+claude --permission-mode default       # Standard mode
 ```
 
 ### Headless Mode
 
 Run Claude Code in CI/CD and automation:
 ```bash
-claude-code --headless --task "Run tests and generate report"
+claude -p "Run tests and generate report"
 ```
 
 **Use Cases**: CI/CD, automated reviews, batch processing
@@ -494,11 +504,12 @@ claude-code --headless --task "Run tests and generate report"
 ### Session Management
 
 Manage multiple work sessions:
-```
-/session list           # Show all sessions
-/session new "Feature"  # Create new session
-/session switch "Bug"   # Switch sessions
-/session save           # Save current state
+```bash
+/resume                          # Resume a previous session interactively
+/rename                          # Rename the current session
+/fork                            # Fork the current session
+claude -c                        # Continue the most recent session
+claude -r "session"              # Resume a session matching the query
 ```
 
 ### Interactive Features
@@ -511,14 +522,22 @@ Manage multiple work sessions:
 
 ### Configuration
 
-Customize Claude Code behavior:
+Customize Claude Code behavior in `~/.claude/settings.json`:
 ```json
 {
-  "planning": { "autoEnter": true },
-  "extendedThinking": { "enabled": true },
-  "backgroundTasks": { "maxConcurrentTasks": 5 },
-  "permissions": { "mode": "unrestricted" },
-  "checkpoints": { "autoCheckpoint": true }
+  "permissions": {
+    "allow": ["Read", "Glob", "Grep", "Bash(git *)"],
+    "deny": ["Bash(rm -rf *)"]
+  },
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Write",
+      "hooks": ["~/.claude/hooks/format-code.sh"]
+    }]
+  },
+  "env": {
+    "MAX_THINKING_TOKENS": "10000"
+  }
 }
 ```
 
@@ -652,7 +671,7 @@ cp 04-subagents/*.md .claude/agents/
 
 # MCP
 export GITHUB_TOKEN="token"
-cp 05-mcp/github-mcp.json .claude/mcp.json
+claude mcp add github -- npx -y @modelcontextprotocol/server-github
 
 # Hooks
 mkdir -p ~/.claude/hooks
@@ -827,9 +846,8 @@ For detailed testing guidelines, see [TESTING.md](.github/TESTING.md).
 
 ## Additional Resources
 
-- [Claude Code Documentation](https://docs.claude.com/en/docs/claude-code)
+- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [MCP Protocol Specification](https://modelcontextprotocol.io)
-- [Plugin Marketplace](https://plugins.claude.com)
 - [Skills Repository](https://github.com/luongnv89/skills) - Collection of ready-to-use skills
 - [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
 - [Boris Cherny's Claude Code Workflow](https://x.com/bcherny/status/2007179832300581177) - The creator of Claude Code shares his systematized workflow: parallel agents, shared CLAUDE.md, Plan mode, slash commands, subagents, and verification hooks for autonomous long-running sessions. Key insights include turning recurring workflows into reusable commands and wiring Claude into team tools (GitHub, Slack, BigQuery, Sentry) for end-to-end work with feedback loops.
@@ -915,6 +933,6 @@ Thanks to everyone who has contributed to this project!
 
 ---
 
-**Last Updated**: January 2026
-**Claude Code Version**: 1.0+
-**Compatible Models**: Claude Sonnet 4.5, Claude Opus 4.5, Claude Haiku 4.5
+**Last Updated**: February 2026
+**Claude Code Version**: 2.1+
+**Compatible Models**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5

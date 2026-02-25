@@ -9,16 +9,16 @@ This document provides a complete index of all example files organized by featur
 
 ## Summary Statistics
 
-- **Total Files**: 90+ files
-- **Categories**: 9 feature categories
+- **Total Files**: 100+ files
+- **Categories**: 10 feature categories
 - **Plugins**: 3 complete plugins
-- **Skills**: 3 complete skills
-- **Hooks**: 6 example hooks
+- **Skills**: 6 complete skills
+- **Hooks**: 8 example hooks
 - **Ready to Use**: All examples
 
 ---
 
-## 📁 01. Slash Commands (4 files)
+## 01. Slash Commands (10 files)
 
 User-invoked shortcuts for common workflows.
 
@@ -27,34 +27,21 @@ User-invoked shortcuts for common workflows.
 | `optimize.md` | Code optimization analyzer | Find performance issues |
 | `pr.md` | Pull request preparation | PR workflow automation |
 | `generate-api-docs.md` | API documentation generator | Generate API docs |
+| `commit.md` | Commit message helper | Standardized commits |
+| `setup-ci-cd.md` | CI/CD pipeline setup | DevOps automation |
+| `push-all.md` | Push all changes | Quick push workflow |
+| `unit-test-expand.md` | Expand unit test coverage | Test automation |
+| `doc-refactor.md` | Documentation refactoring | Doc improvements |
+| `pr-slash-command.png` | Screenshot example | Visual reference |
 | `README.md` | Documentation | Setup and usage guide |
 
 **Installation Path**: `.claude/commands/`
 
-**Usage**: `/optimize`, `/pr`, `/generate-api-docs`
+**Usage**: `/optimize`, `/pr`, `/generate-api-docs`, `/commit`, `/setup-ci-cd`, `/push-all`, `/unit-test-expand`, `/doc-refactor`
 
 ---
 
-## 🤖 02. Subagents (6 files)
-
-Specialized AI assistants with custom capabilities.
-
-| File | Description | Tools | Use Case |
-|------|-------------|-------|----------|
-| `code-reviewer.md` | Code quality analysis | read, grep, diff, lint_runner | Comprehensive reviews |
-| `test-engineer.md` | Test coverage analysis | read, write, bash, grep | Test automation |
-| `documentation-writer.md` | Documentation creation | read, write, grep | Doc generation |
-| `secure-reviewer.md` | Security review (read-only) | read, grep | Security audits |
-| `implementation-agent.md` | Full implementation | read, write, bash, grep, edit, glob | Feature development |
-| `README.md` | Documentation | - | Setup and usage guide |
-
-**Installation Path**: `.claude/agents/`
-
-**Usage**: Automatically delegated by main agent
-
----
-
-## 💾 03. Memory (4 files)
+## 02. Memory (6 files)
 
 Persistent context and project standards.
 
@@ -63,6 +50,8 @@ Persistent context and project standards.
 | `project-CLAUDE.md` | Team project standards | Project-wide | `./CLAUDE.md` |
 | `directory-api-CLAUDE.md` | API-specific rules | Directory | `./src/api/CLAUDE.md` |
 | `personal-CLAUDE.md` | Personal preferences | User | `~/.claude/CLAUDE.md` |
+| `memory-saved.png` | Screenshot: memory saved | - | Visual reference |
+| `memory-ask-claude.png` | Screenshot: ask Claude | - | Visual reference |
 | `README.md` | Documentation | - | Reference |
 
 **Installation**: Copy to appropriate location
@@ -71,25 +60,7 @@ Persistent context and project standards.
 
 ---
 
-## 🔌 04. MCP Protocol (5 files)
-
-External tool and API integrations.
-
-| File | Description | Integrates With | Use Case |
-|------|-------------|-----------------|----------|
-| `github-mcp.json` | GitHub integration | GitHub API | PR/issue management |
-| `database-mcp.json` | Database queries | PostgreSQL/MySQL | Live data queries |
-| `filesystem-mcp.json` | File operations | Local filesystem | File management |
-| `multi-mcp.json` | Multiple servers | GitHub + DB + Slack | Complete integration |
-| `README.md` | Documentation | - | Setup and usage guide |
-
-**Installation Path**: `.claude/mcp.json`
-
-**Usage**: `/mcp__github__list_prs`, etc.
-
----
-
-## 🎯 05. Skills (11 files)
+## 03. Skills (28 files)
 
 Auto-invoked capabilities with scripts and templates.
 
@@ -138,20 +109,131 @@ doc-generator/
 
 **Auto-invoked**: When creating/updating API documentation
 
+---
+
+### Refactor Skill (5 files)
+```
+refactor/
+├── SKILL.md                          # Skill definition
+├── scripts/
+│   ├── analyze-complexity.py         # Complexity analyzer
+│   └── detect-smells.py              # Code smell detector
+├── references/
+│   ├── code-smells.md                # Code smells catalog
+│   └── refactoring-catalog.md        # Refactoring patterns
+└── templates/
+    └── refactoring-plan.md           # Refactoring plan template
+```
+
+**Purpose**: Systematic code refactoring with complexity analysis
+
+**Auto-invoked**: When refactoring code
+
+---
+
+### Claude MD Skill (1 file)
+```
+claude-md/
+└── SKILL.md                          # Skill definition
+```
+
+**Purpose**: Manage and optimize CLAUDE.md files
+
+---
+
+### Blog Draft Skill (3 files)
+```
+blog-draft/
+├── SKILL.md                          # Skill definition
+└── templates/
+    ├── draft-template.md             # Blog draft template
+    └── outline-template.md           # Blog outline template
+```
+
+**Purpose**: Draft blog posts with consistent structure
+
 **Plus**: `README.md` - Skills overview and usage guide
 
 **Installation Path**: `~/.claude/skills/` or `.claude/skills/`
 
 ---
 
-## 📦 06. Plugins (3 complete plugins, 40 files)
+## 04. Subagents (9 files)
+
+Specialized AI assistants with custom capabilities.
+
+| File | Description | Tools | Use Case |
+|------|-------------|-------|----------|
+| `code-reviewer.md` | Code quality analysis | read, grep, diff, lint_runner | Comprehensive reviews |
+| `test-engineer.md` | Test coverage analysis | read, write, bash, grep | Test automation |
+| `documentation-writer.md` | Documentation creation | read, write, grep | Doc generation |
+| `secure-reviewer.md` | Security review (read-only) | read, grep | Security audits |
+| `implementation-agent.md` | Full implementation | read, write, bash, grep, edit, glob | Feature development |
+| `debugger.md` | Debugging specialist | read, bash, grep | Bug investigation |
+| `data-scientist.md` | Data analysis specialist | read, write, bash | Data workflows |
+| `clean-code-reviewer.md` | Clean code standards | read, grep | Code quality |
+| `README.md` | Documentation | - | Setup and usage guide |
+
+**Installation Path**: `.claude/agents/`
+
+**Usage**: Automatically delegated by main agent
+
+---
+
+## 05. MCP Protocol (5 files)
+
+External tool and API integrations.
+
+| File | Description | Integrates With | Use Case |
+|------|-------------|-----------------|----------|
+| `github-mcp.json` | GitHub integration | GitHub API | PR/issue management |
+| `database-mcp.json` | Database queries | PostgreSQL/MySQL | Live data queries |
+| `filesystem-mcp.json` | File operations | Local filesystem | File management |
+| `multi-mcp.json` | Multiple servers | GitHub + DB + Slack | Complete integration |
+| `README.md` | Documentation | - | Setup and usage guide |
+
+**Installation Path**: `.mcp.json` (project scope) or `~/.claude.json` (user scope)
+
+**Usage**: `/mcp__github__list_prs`, etc.
+
+---
+
+## 06. Hooks (9 files)
+
+Event-driven automation scripts that execute automatically.
+
+| File | Description | Event | Use Case |
+|------|-------------|-------|----------|
+| `format-code.sh` | Auto-format code | PreToolUse:Write | Code formatting |
+| `pre-commit.sh` | Run tests before commit | PreToolUse:Bash | Test automation |
+| `security-scan.sh` | Security scanning | PostToolUse:Write | Security checks |
+| `log-bash.sh` | Log bash commands | PostToolUse:Bash | Command logging |
+| `validate-prompt.sh` | Validate prompts | PreToolUse | Input validation |
+| `notify-team.sh` | Send notifications | Notification | Team notifications |
+| `context-tracker.py` | Track context window usage | PostToolUse | Context monitoring |
+| `context-tracker-tiktoken.py` | Token-based context tracking | PostToolUse | Precise token counting |
+| `README.md` | Documentation | - | Setup and usage guide |
+
+**Installation Path**: Configure in `~/.claude/settings.json`
+
+**Usage**: Configured in settings, executed automatically
+
+**Hook Types**:
+- Tool Hooks: PreToolUse:*, PostToolUse:*
+- Session Hooks: Stop, SubagentStop, SubagentStart
+- Lifecycle Hooks: Notification, ConfigChange, WorktreeCreate, WorktreeRemove
+
+---
+
+## 07. Plugins (3 complete plugins, 40 files)
 
 Bundled collections of features.
 
 ### PR Review Plugin (10 files)
 ```
 pr-review/
-├── plugin.yaml                       # Plugin manifest
+├── .claude-plugin/
+│   └── plugin.json                   # Plugin manifest
 ├── commands/
 │   ├── review-pr.md                  # Comprehensive review
 │   ├── check-security.md             # Security check
@@ -178,7 +260,8 @@ pr-review/
 ### DevOps Automation Plugin (15 files)
 ```
 devops-automation/
-├── plugin.yaml                       # Plugin manifest
+├── .claude-plugin/
+│   └── plugin.json                   # Plugin manifest
 ├── commands/
 │   ├── deploy.md                     # Deployment
 │   ├── rollback.md                   # Rollback
@@ -211,7 +294,8 @@ devops-automation/
 ### Documentation Plugin (14 files)
 ```
 documentation/
-├── plugin.yaml                       # Plugin manifest
+├── .claude-plugin/
+│   └── plugin.json                   # Plugin manifest
 ├── commands/
 │   ├── generate-api-docs.md          # API docs generation
 │   ├── generate-readme.md            # README creation
@@ -240,32 +324,7 @@ documentation/
 
 ---
 
-## ⚙️ 07. Hooks (7 files)
-
-Event-driven automation scripts that execute automatically.
-
-| File | Description | Event | Use Case |
-|------|-------------|-------|----------|
-| `format-code.sh` | Auto-format code | PreToolUse:Write | Code formatting |
-| `pre-commit.sh` | Run tests before commit | PreCommit | Test automation |
-| `security-scan.sh` | Security scanning | PostToolUse:Write | Security checks |
-| `log-bash.sh` | Log bash commands | PostToolUse:Bash | Command logging |
-| `validate-prompt.sh` | Validate prompts | UserPromptSubmit | Input validation |
-| `notify-team.sh` | Send notifications | PostPush | Team notifications |
-| `README.md` | Documentation | - | Setup and usage guide |
-
-**Installation Path**: `~/.claude/hooks/`
-
-**Usage**: Configured in settings, executed automatically
-
-**Hook Types**:
-- Tool Hooks: PreToolUse:*, PostToolUse:*
-- Session Hooks: UserPromptSubmit, SessionStart, SessionEnd
-- Git Hooks: PreCommit, PostCommit, PrePush
-
----
-
-## 💾 08. Checkpoints and Rewind (3 files)
+## 08. Checkpoints and Rewind (2 files)
 
 Save conversation state and explore alternative approaches.
 
@@ -282,10 +341,11 @@ Save conversation state and explore alternative approaches.
 
 **Usage**:
 ```
-/checkpoint save "Before refactoring"
-/checkpoint list
-/checkpoint rewind "Before refactoring"
-/checkpoint diff checkpoint-1 checkpoint-2
+# Checkpoints are created automatically with every user prompt
+# To rewind, press Esc twice or use:
+/rewind
+# Then choose: Restore code and conversation, Restore conversation,
+# Restore code, Summarize from here, or Never mind
 ```
 
 **Use Cases**:
@@ -297,7 +357,7 @@ Save conversation state and explore alternative approaches.
 
 ---
 
-## 🚀 09. Advanced Features (4 files)
+## 09. Advanced Features (3 files)
 
 Advanced capabilities for complex workflows.
 
@@ -326,12 +386,13 @@ Advanced capabilities for complex workflows.
 - Task management and monitoring
 
 ### Permission Modes
-- **Unrestricted**: Full access (default)
-- **Confirm**: Ask before actions
-- **Read-only**: Analysis only
-- **Custom**: Granular control
+- **default**: Ask for approval on risky actions
+- **acceptEdits**: Auto-accept file edits, ask for others
+- **plan**: Read-only analysis, no modifications
+- **dontAsk**: Accept all actions except risky ones
+- **bypassPermissions**: Accept all (requires `--dangerously-skip-permissions`)
 
-### Headless Mode
+### Headless Mode (`claude -p`)
 - CI/CD integration
 - Automated task execution
 - Batch processing
@@ -354,26 +415,45 @@ Advanced capabilities for complex workflows.
 
 ---
 
-## 📚 Documentation Files (11 files)
+## 10. CLI Usage (1 file)
+
+Command-line interface usage patterns and reference.
+
+| File | Description | Content |
+|------|-------------|---------|
+| `README.md` | CLI documentation | Flags, options, and usage patterns |
+
+**Key CLI Features**:
+- `claude` - Start interactive session
+- `claude -p "prompt"` - Headless/non-interactive mode
+- `claude web` - Launch web session
+- `claude --model` - Select model (Sonnet 4.6, Opus 4.6)
+- `claude --permission-mode` - Set permission mode
+- `claude --remote` - Enable remote control via WebSocket
+
+---
+
+## Documentation Files (13 files)
 
 | File | Location | Description |
 |------|----------|-------------|
 | `README.md` | `/` | Main examples overview |
 | `INDEX.md` | `/` | This complete index |
+| `QUICK_REFERENCE.md` | `/` | Quick reference card |
 | `README.md` | `/01-slash-commands/` | Slash commands guide |
-| `README.md` | `/02-subagents/` | Subagents guide |
-| `README.md` | `/03-memory/` | Memory guide |
-| `README.md` | `/04-mcp/` | MCP guide |
-| `README.md` | `/05-skills/` | Skills guide |
-| `README.md` | `/06-plugins/` | Plugins guide |
+| `README.md` | `/02-memory/` | Memory guide |
+| `README.md` | `/03-skills/` | Skills guide |
+| `README.md` | `/04-subagents/` | Subagents guide |
+| `README.md` | `/05-mcp/` | MCP guide |
 | `README.md` | `/06-hooks/` | Hooks guide |
+| `README.md` | `/07-plugins/` | Plugins guide |
 | `README.md` | `/08-checkpoints/` | Checkpoints guide |
 | `README.md` | `/09-advanced-features/` | Advanced features guide |
-| `QUICK_REFERENCE.md` | `/` | Quick reference card |
+| `README.md` | `/10-cli/` | CLI guide |
 
 ---
 
-## 🗂️ Complete File Tree
+## Complete File Tree
 
 ```
 claude-howto/
@@ -386,30 +466,23 @@ claude-howto/
 │   ├── optimize.md
 │   ├── pr.md
 │   ├── generate-api-docs.md
+│   ├── commit.md
+│   ├── setup-ci-cd.md
+│   ├── push-all.md
+│   ├── unit-test-expand.md
+│   ├── doc-refactor.md
+│   ├── pr-slash-command.png
 │   └── README.md
 │
-├── 02-subagents/                                # Subagents
-│   ├── code-reviewer.md
-│   ├── test-engineer.md
-│   ├── documentation-writer.md
-│   ├── secure-reviewer.md
-│   ├── implementation-agent.md
-│   └── README.md
-│
-├── 03-memory/                                   # Memory
+├── 02-memory/                                   # Memory
 │   ├── project-CLAUDE.md
 │   ├── directory-api-CLAUDE.md
 │   ├── personal-CLAUDE.md
+│   ├── memory-saved.png
+│   ├── memory-ask-claude.png
 │   └── README.md
 │
-├── 04-mcp/                                      # MCP Protocol
-│   ├── github-mcp.json
-│   ├── database-mcp.json
-│   ├── filesystem-mcp.json
-│   ├── multi-mcp.json
-│   └── README.md
-│
-├── 05-skills/                                   # Skills
+├── 03-skills/                                   # Skills
 │   ├── code-review/
 │   │   ├── SKILL.md
 │   │   ├── scripts/
@@ -427,11 +500,58 @@ claude-howto/
 │   ├── doc-generator/
 │   │   ├── SKILL.md
 │   │   └── generate-docs.py
+│   ├── refactor/
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   │   ├── analyze-complexity.py
+│   │   │   └── detect-smells.py
+│   │   ├── references/
+│   │   │   ├── code-smells.md
+│   │   │   └── refactoring-catalog.md
+│   │   └── templates/
+│   │       └── refactoring-plan.md
+│   ├── claude-md/
+│   │   └── SKILL.md
+│   ├── blog-draft/
+│   │   ├── SKILL.md
+│   │   └── templates/
+│   │       ├── draft-template.md
+│   │       └── outline-template.md
 │   └── README.md
 │
-├── 06-plugins/                                  # Plugins
+├── 04-subagents/                                # Subagents
+│   ├── code-reviewer.md
+│   ├── test-engineer.md
+│   ├── documentation-writer.md
+│   ├── secure-reviewer.md
+│   ├── implementation-agent.md
+│   ├── debugger.md
+│   ├── data-scientist.md
+│   ├── clean-code-reviewer.md
+│   └── README.md
+│
+├── 05-mcp/                                      # MCP Protocol
+│   ├── github-mcp.json
+│   ├── database-mcp.json
+│   ├── filesystem-mcp.json
+│   ├── multi-mcp.json
+│   └── README.md
+│
+├── 06-hooks/                                    # Hooks
+│   ├── format-code.sh
+│   ├── pre-commit.sh
+│   ├── security-scan.sh
+│   ├── log-bash.sh
+│   ├── validate-prompt.sh
+│   ├── notify-team.sh
+│   ├── context-tracker.py
+│   ├── context-tracker-tiktoken.py
+│   └── README.md
+│
+├── 07-plugins/                                  # Plugins
 │   ├── pr-review/
-│   │   ├── plugin.yaml
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
 │   │   ├── commands/
 │   │   │   ├── review-pr.md
 │   │   │   ├── check-security.md
@@ -446,7 +566,8 @@ claude-howto/
 │   │   │   └── pre-review.js
 │   │   └── README.md
 │   ├── devops-automation/
-│   │   ├── plugin.yaml
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
 │   │   ├── commands/
 │   │   │   ├── deploy.md
 │   │   │   ├── rollback.md
@@ -467,7 +588,8 @@ claude-howto/
 │   │   │   └── health-check.sh
 │   │   └── README.md
 │   ├── documentation/
-│   │   ├── plugin.yaml
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
 │   │   ├── commands/
 │   │   │   ├── generate-api-docs.md
 │   │   │   ├── generate-readme.md
@@ -486,28 +608,22 @@ claude-howto/
 │   │   └── README.md
 │   └── README.md
 │
-├── 06-hooks/                                    # Hooks
-│   ├── format-code.sh
-│   ├── pre-commit.sh
-│   ├── security-scan.sh
-│   ├── log-bash.sh
-│   ├── validate-prompt.sh
-│   ├── notify-team.sh
-│   └── README.md
-│
 ├── 08-checkpoints/                              # Checkpoints
 │   ├── checkpoint-examples.md
 │   └── README.md
 │
-└── 09-advanced-features/                        # Advanced Features
-    ├── config-examples.json
-    ├── planning-mode-examples.md
+├── 09-advanced-features/                        # Advanced Features
+│   ├── config-examples.json
+│   ├── planning-mode-examples.md
+│   └── README.md
+│
+└── 10-cli/                                      # CLI Usage
     └── README.md
 ```
 
 ---
 
-## 🚀 Quick Start by Use Case
+## Quick Start by Use Case
 
 ### Code Quality & Reviews
 ```bash
@@ -515,10 +631,10 @@ claude-howto/
 cp 01-slash-commands/optimize.md .claude/commands/
 
 # Install subagent
-cp 02-subagents/code-reviewer.md .claude/agents/
+cp 04-subagents/code-reviewer.md .claude/agents/
 
 # Install skill
-cp -r 05-skills/code-review ~/.claude/skills/
+cp -r 03-skills/code-review ~/.claude/skills/
 
 # Or install complete plugin
 /plugin install pr-review
@@ -536,10 +652,10 @@ cp -r 05-skills/code-review ~/.claude/skills/
 cp 01-slash-commands/generate-api-docs.md .claude/commands/
 
 # Install subagent
-cp 02-subagents/documentation-writer.md .claude/agents/
+cp 04-subagents/documentation-writer.md .claude/agents/
 
 # Install skill
-cp -r 05-skills/doc-generator ~/.claude/skills/
+cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # Or install complete plugin
 /plugin install documentation
@@ -548,7 +664,7 @@ cp -r 05-skills/doc-generator ~/.claude/skills/
 ### Team Standards
 ```bash
 # Set up project memory
-cp 03-memory/project-CLAUDE.md ./CLAUDE.md
+cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 
 # Edit to match your team's standards
 ```
@@ -559,8 +675,8 @@ cp 03-memory/project-CLAUDE.md ./CLAUDE.md
 export GITHUB_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
-# Install MCP config
-cp 04-mcp/multi-mcp.json .claude/mcp.json
+# Install MCP config (project scope)
+cp 05-mcp/multi-mcp.json .mcp.json
 ```
 
 ### Automation & Validation
@@ -570,17 +686,15 @@ mkdir -p ~/.claude/hooks
 cp 06-hooks/*.sh ~/.claude/hooks/
 chmod +x ~/.claude/hooks/*.sh
 
-# Configure hooks in settings
+# Configure hooks in settings (~/.claude/settings.json)
 # See 06-hooks/README.md
 ```
 
 ### Safe Experimentation
 ```bash
-# Checkpoints are auto-enabled
-# Use in your workflow:
-/checkpoint save "Before refactoring"
-/checkpoint list
-/checkpoint rewind "Before refactoring"
+# Checkpoints are created automatically with every user prompt
+# To rewind: press Esc+Esc or use /rewind
+# Then choose what to restore from the rewind menu
 
 # See 08-checkpoints/README.md for examples
 ```
@@ -594,8 +708,11 @@ chmod +x ~/.claude/hooks/*.sh
 /plan Implement feature X
 
 # Use permission modes
-/permission readonly    # For code review
-/permission confirm     # For learning
+claude --permission-mode plan          # For code review (read-only)
+claude --permission-mode acceptEdits   # Auto-accept edits
+
+# Run in headless mode for CI/CD
+claude -p "Run tests and report results"
 
 # Run background tasks
 Run tests in background
@@ -605,24 +722,24 @@ Run tests in background
 
 ---
 
-## 📊 Feature Coverage Matrix
+## Feature Coverage Matrix
 
-| Category | Commands | Agents | MCP | Hooks | Scripts | Templates | Docs | Examples | Total |
-|----------|----------|--------|-----|-------|---------|-----------|------|----------|-------|
-| **Slash Commands** | 3 | - | - | - | - | - | 1 | - | **4** |
-| **Subagents** | - | 5 | - | - | - | - | 1 | - | **6** |
-| **Memory** | - | - | - | - | - | 3 | 1 | - | **4** |
-| **MCP** | - | - | 4 | - | - | - | 1 | - | **5** |
-| **Skills** | - | - | - | - | 3 | 7 | 1 | - | **11** |
-| **Plugins** | 11 | 9 | 3 | 3 | 3 | 3 | 4 | - | **36** |
-| **Hooks** | - | - | - | 6 | - | - | 1 | - | **7** |
-| **Checkpoints** | - | - | - | - | - | - | 1 | 1 | **2** |
-| **Advanced** | - | - | - | - | - | - | 1 | 2 | **3** |
-| **TOTAL** | **14** | **14** | **7** | **9** | **6** | **13** | **12** | **3** | **78** |
+| Category | Commands | Agents | MCP | Hooks | Scripts | Templates | Docs | Images | Total |
+|----------|----------|--------|-----|-------|---------|-----------|------|--------|-------|
+| **01 Slash Commands** | 8 | - | - | - | - | - | 1 | 1 | **10** |
+| **02 Memory** | - | - | - | - | - | 3 | 1 | 2 | **6** |
+| **03 Skills** | - | - | - | - | 5 | 9 | 1 | - | **28** |
+| **04 Subagents** | - | 8 | - | - | - | - | 1 | - | **9** |
+| **05 MCP** | - | - | 4 | - | - | - | 1 | - | **5** |
+| **06 Hooks** | - | - | - | 8 | - | - | 1 | - | **9** |
+| **07 Plugins** | 11 | 9 | 3 | 3 | 3 | 3 | 4 | - | **40** |
+| **08 Checkpoints** | - | - | - | - | - | - | 1 | 1 | **2** |
+| **09 Advanced** | - | - | - | - | - | - | 1 | 2 | **3** |
+| **10 CLI** | - | - | - | - | - | - | 1 | - | **1** |
 
 ---
 
-## 🎯 Learning Path
+## Learning Path
 
 ### Beginner (Week 1)
 1. ✅ Read `README.md`
@@ -653,31 +770,31 @@ Run tests in background
 
 ---
 
-## 🔍 Search by Keyword
+## Search by Keyword
 
 ### Performance
 - `01-slash-commands/optimize.md` - Performance analysis
-- `02-subagents/code-reviewer.md` - Performance review
-- `05-skills/code-review/` - Performance metrics
-- `06-plugins/pr-review/agents/performance-analyzer.md` - Performance specialist
+- `04-subagents/code-reviewer.md` - Performance review
+- `03-skills/code-review/` - Performance metrics
+- `07-plugins/pr-review/agents/performance-analyzer.md` - Performance specialist
 
 ### Security
-- `02-subagents/secure-reviewer.md` - Security review
-- `05-skills/code-review/` - Security analysis
-- `06-plugins/pr-review/` - Security checks
+- `04-subagents/secure-reviewer.md` - Security review
+- `03-skills/code-review/` - Security analysis
+- `07-plugins/pr-review/` - Security checks
 
 ### Testing
-- `02-subagents/test-engineer.md` - Test engineer
-- `06-plugins/pr-review/commands/check-tests.md` - Test coverage
+- `04-subagents/test-engineer.md` - Test engineer
+- `07-plugins/pr-review/commands/check-tests.md` - Test coverage
 
 ### Documentation
 - `01-slash-commands/generate-api-docs.md` - API docs command
-- `02-subagents/documentation-writer.md` - Doc writer agent
-- `05-skills/doc-generator/` - Doc generator skill
-- `06-plugins/documentation/` - Complete doc plugin
+- `04-subagents/documentation-writer.md` - Doc writer agent
+- `03-skills/doc-generator/` - Doc generator skill
+- `07-plugins/documentation/` - Complete doc plugin
 
 ### Deployment
-- `06-plugins/devops-automation/` - Complete DevOps solution
+- `07-plugins/devops-automation/` - Complete DevOps solution
 
 ### Automation
 - `06-hooks/` - Event-driven automation
@@ -702,7 +819,7 @@ Run tests in background
 
 ---
 
-## 📝 Notes
+## Notes
 
 - All examples are ready to use
 - Modify to fit your specific needs
@@ -713,7 +830,7 @@ Run tests in background
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Want to add more examples? Follow the structure:
 1. Create appropriate subdirectory
@@ -724,9 +841,9 @@ Want to add more examples? Follow the structure:
 
 ---
 
-**Last Updated**: November 2025
-**Total Examples**: 90+ files
-**Categories**: 9 features
-**Hooks**: 6 automation scripts
+**Last Updated**: February 2026
+**Total Examples**: 100+ files
+**Categories**: 10 features
+**Hooks**: 8 automation scripts
 **Configuration Examples**: 10+ scenarios
-**Ready to Use**: ✅ All examples
+**Ready to Use**: All examples
